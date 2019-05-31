@@ -1,8 +1,8 @@
 from Arena import Arena
 from MCTS import MCTS
-from othello.OthelloGame import OthelloGame, display
-from othello.OthelloPlayers import *
-from othello.tensorflow.NNet import NNetWrapper as NNet
+from gobang.GobangGame import GobangGame, display
+from gobang.GobangPlayers import *
+from gobang.tensorflow.NNet import NNetWrapper as NNet
 import os
 import numpy as np
 import tensorflow as tf
@@ -22,9 +22,9 @@ def Async_Play(game,args,iter_num,bar):
     # set gpu
     if(args.multiGPU):
         if(iter_num%2==0):
-            os.environ["CUDA_VISIBLE_DEVICES"] = "0"
+            os.environ["CUDA_VISIBLE_DEVICES"] = "4"
         else:
-            os.environ["CUDA_VISIBLE_DEVICES"] = "1"
+            os.environ["CUDA_VISIBLE_DEVICES"] = "5"
     else:
         os.environ["CUDA_VISIBLE_DEVICES"] = args.setGPU
 
@@ -67,10 +67,10 @@ if __name__=="__main__":
     """
     args = dotdict({
     'numMCTSSims': 25,
-    'cpuct': 1,
+    'cpuct': 3,
 
-    'multiGPU': False,  # multiGPU only support 2 GPUs.
-    'setGPU': '0',
+    'multiGPU': True,  # multiGPU only support 2 GPUs.
+    'setGPU': '4,5',
     'numPlayGames': 4,  # total num should x2, because each process play 2 games.
     'numPlayPool': 4,   # num of processes pool.
 
@@ -103,7 +103,7 @@ if __name__=="__main__":
         print("Model 1 Win:",oneWon," Model 2 Win:",twoWon," Draw:",draws)
 
 
-    g = OthelloGame(6)
+    g = GobangGame(6, 4)
 
     # parallel version
     #ParallelPlay(g)
@@ -111,21 +111,14 @@ if __name__=="__main__":
     # single process version
     # all players
     rp = RandomPlayer(g).play
-    gp = GreedyOthelloPlayer(g).play
-    hp = HumanOthelloPlayer(g).play
+    hp = HumanGobangPlayer(g).play
 
     # nnet players
     n1 = NNet(g)
-    n1.load_checkpoint('./pretrained_models/othello/pytorch/','6x100x25_best.pth.tar')
-    args1 = dotdict({'numMCTSSims': 50, 'cpuct':1.0})
+    n1.load_checkpoint('./temp/','best.pth.tar')
+    args1 = dotdict({'numMCTSSims': 50, 'cpuct':3.0})
     mcts1 = MCTS(g, n1, args1)
     n1p = lambda x: np.argmax(mcts1.getActionProb(x, temp=0))
-
-    #n2 = NNet(g)
-    #n2.load_checkpoint('/dev/8x50x25/','best.pth.tar')
-    #args2 = dotdict({'numMCTSSims': 25, 'cpuct':1.0})
-    #mcts2 = MCTS(g, n2, args2)
-    #n2p = lambda x: np.argmax(mcts2.getActionProb(x, temp=0))
 
     arena = Arena.Arena(n1p, hp, g, display=display)
     print(arena.playGames(2, verbose=True))

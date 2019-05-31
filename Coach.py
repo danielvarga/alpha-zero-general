@@ -7,15 +7,15 @@ import time, os
 from pickle import Pickler, Unpickler
 import tensorflow as tf
 import multiprocessing
-from othello.tensorflow.NNet import NNetWrapper as nn
+from gobang.tensorflow.NNet import NNetWrapper as nn
 
 def AsyncSelfPlay(game,args,iter_num,bar):
     #set gpu
     if(args.multiGPU):
         if(iter_num%2==0):
-            os.environ["CUDA_VISIBLE_DEVICES"] = "0"
+            os.environ["CUDA_VISIBLE_DEVICES"] = "2"
         else:
-            os.environ["CUDA_VISIBLE_DEVICES"] = "1"
+            os.environ["CUDA_VISIBLE_DEVICES"] = "3"
     else:
         os.environ["CUDA_VISIBLE_DEVICES"] = args.setGPU
 
@@ -117,9 +117,9 @@ def AsyncAgainst(game,args,iter_num,bar):
     #set gpu
     if(args.multiGPU):
         if(iter_num%2==0):
-            os.environ["CUDA_VISIBLE_DEVICES"] = "0"
+            os.environ["CUDA_VISIBLE_DEVICES"] = "2"
         else:
-            os.environ["CUDA_VISIBLE_DEVICES"] = "1"
+            os.environ["CUDA_VISIBLE_DEVICES"] = "3"
     else:
         os.environ["CUDA_VISIBLE_DEVICES"] = args.setGPU
 
