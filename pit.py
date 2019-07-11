@@ -1,4 +1,4 @@
-from Arena import Arena
+import Arena
 from MCTS import MCTS
 from gobang.GobangGame import GobangGame, display
 from gobang.GobangPlayers import *
@@ -54,7 +54,7 @@ def Async_Play(game,args,iter_num,bar):
     mcts2 = MCTS(game, model2, args)
 
     # each process play 2 games
-    arena = Arena(lambda x: np.argmax(mcts1.getActionProb(x, temp=0)),lambda x: np.argmax(mcts2.getActionProb(x, temp=0)), game)
+    arena = Arena.Arena(lambda x: np.argmax(mcts1.getActionProb(x, temp=0)),lambda x: np.argmax(mcts2.getActionProb(x, temp=0)), game)
     arena.displayBar = False
     oneWon,twoWon, draws = arena.playGames(2)
     return oneWon,twoWon, draws
@@ -103,7 +103,7 @@ if __name__=="__main__":
         print("Model 1 Win:",oneWon," Model 2 Win:",twoWon," Draw:",draws)
 
 
-    g = GobangGame(6, 4)
+    g = GobangGame(col=12, row=4, nir=7, defender=-1)
 
     # parallel version
     #ParallelPlay(g)
@@ -118,7 +118,7 @@ if __name__=="__main__":
     n1.load_checkpoint('./temp/','best.pth.tar')
     args1 = dotdict({'numMCTSSims': 50, 'cpuct':3.0})
     mcts1 = MCTS(g, n1, args1)
-    n1p = lambda x: np.argmax(mcts1.getActionProb(x, temp=0))
+    n1p = lambda b, p: np.argmax(mcts1.getActionProb(b, p, temp=0))
 
     arena = Arena.Arena(n1p, hp, g, display=display)
     print(arena.playGames(2, verbose=True))

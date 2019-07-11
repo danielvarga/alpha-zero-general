@@ -14,33 +14,37 @@ class GobangNNet():
         # Renaming functions 
         Relu = tf.nn.relu
         Tanh = tf.nn.tanh
-        BatchNormalization = tf.layers.batch_normalization
-        Dropout = tf.layers.dropout
-        Dense = tf.layers.dense
+        BatchNormalization = tf.keras.layers.BatchNormalization
+        Dropout = tf.keras.layers.Dropout
+        Dense = tf.keras.layers.Dense
 
         # Neural Net
         self.graph = tf.Graph()
         with self.graph.as_default():
             self.input_boards = tf.placeholder(tf.float32, shape=[None, self.board_x, self.board_y])    # s: batch_size x board_x x board_y
+            self.curPlayer = tf.placeholder(tf.float32, shape=())
             self.dropout = tf.placeholder(tf.float32)
             self.isTraining = tf.placeholder(tf.bool, name="is_training")
 
             x_image = tf.reshape(self.input_boards, [-1, self.board_x, self.board_y, 1])                    # batch_size  x board_x x board_y x 1
-            h_conv1 = Relu(BatchNormalization(self.conv2d(x_image, args.num_channels, 'same'), axis=3, training=self.isTraining))     # batch_size  x board_x x board_y x num_channels
-            h_conv2 = Relu(BatchNormalization(self.conv2d(h_conv1, args.num_channels, 'same'), axis=3, training=self.isTraining))     # batch_size  x board_x x board_y x num_channels
-            h_conv3 = Relu(BatchNormalization(self.conv2d(h_conv2, args.num_channels, 'valid'), axis=3, training=self.isTraining))    # batch_size  x (board_x-2) x (board_y-2) x num_channels
-            h_conv4 = Relu(BatchNormalization(self.conv2d(h_conv3, args.num_channels, 'valid'), axis=3, training=self.isTraining))    # batch_size  x (board_x-4) x (board_y-4) x num_channels
-            h_conv4_flat = tf.reshape(h_conv4, [-1, args.num_channels*(self.board_x-4)*(self.board_y-4)])
-            s_fc1 = Dropout(Relu(BatchNormalization(Dense(h_conv4_flat, 1024), axis=1, training=self.isTraining)), rate=self.dropout) # batch_size x 1024
-            s_fc2 = Dropout(Relu(BatchNormalization(Dense(s_fc1, 512), axis=1, training=self.isTraining)), rate=self.dropout)         # batch_size x 512
-            self.pi = Dense(s_fc2, self.action_size)                                                        # batch_size x self.action_size
+            player_channel = self.curPlayer * tf.ones_like(x_image)
+            x_image = tf.concat([x_image, player_channel], axis=3)
+            h_conv1 = Relu(BatchNormalization(axis=3)(self.conv2d(x_image, args.num_channels, 'same'), training=self.isTraining))     # batch_size  x board_x x board_y x num_channels
+            h_conv2 = Relu(BatchNormalization(axis=3)(self.conv2d(h_conv1, args.num_channels, 'same'), training=self.isTraining))     # batch_size  x board_x x board_y x num_channels
+            h_conv3 = Relu(BatchNormalization(axis=3)(self.conv2d(h_conv2, args.num_channels, 'valid'), training=self.isTraining))    # batch_size  x (board_x-2) x (board_y-2) x num_channels
+            h_conv4 = Relu(BatchNormalization(axis=3)(self.conv2d(h_conv3, args.num_channels, 'same'), training=self.isTraining))    # batch_size  x (board_x-2) x (board_y-2) x num_channels
+            h_conv4_flat = tf.reshape(h_conv4, [-1, args.num_channels*(self.board_x-2)*(self.board_y-2)])
+            s_fc1 = Dropout(self.dropout)(Relu(BatchNormalization(axis=1)(Dense(1024)(h_conv4_flat), training=self.isTraining))) # batch_size x 1024
+            s_fc2 = Dropout(self.dropout)(Relu(BatchNormalization(axis=1)(Dense(512)(s_fc1), training=self.isTraining)))         # batch_size x 512
+            self.pi = Dense(self.action_size)(s_fc2)                                                        # batch_size x self.action_size
             self.prob = tf.nn.softmax(self.pi)
-            self.v = Tanh(Dense(s_fc2, 1))                                                               # batch_size x 1
+            self.v = Tanh(Dense(1)(s_fc2))                                                               # batch_size x 1
 
             self.calculate_loss()
 
     def conv2d(self, x, out_channels, padding):
-      return tf.layers.conv2d(x, out_channels, kernel_size=[3,3], padding=padding)
+        #return tf.layers.conv2d(x, out_channels, kernel_size=[3,3], padding=padding)
+        return tf.keras.layers.Conv2D(out_channels, kernel_size=[3,3], padding=padding)(x)
 
     def calculate_loss(self):
         self.target_pis = tf.placeholder(tf.float32, shape=[None, self.action_size])

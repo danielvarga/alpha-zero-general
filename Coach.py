@@ -7,13 +7,14 @@ import time, os
 from pickle import Pickler, Unpickler
 import tensorflow as tf
 import multiprocessing
-from gobang.tensorflow.NNet import NNetWrapper as nn
+from gobang.tensorflow.NNet_tile import NNetWrapper as nn
+from gobang.GobangGame_tile import display
 
 def AsyncSelfPlay(game,args,iter_num,bar):
     #set gpu
     if(args.multiGPU):
         if(iter_num%2==0):
-            os.environ["CUDA_VISIBLE_DEVICES"] = "2"
+            os.environ["CUDA_VISIBLE_DEVICES"] = "4"
         else:
             os.environ["CUDA_VISIBLE_DEVICES"] = "3"
     else:
@@ -32,6 +33,9 @@ def AsyncSelfPlay(game,args,iter_num,bar):
         pass
     mcts = MCTS(game, net,args)
 
+    # create separate seeds for each worker
+    np.random.seed(iter_num)
+   
     # create a list for store game state
     returnlist = []
     for i in range(args.numPerProcessSelfPlay):
@@ -48,27 +52,30 @@ def AsyncSelfPlay(game,args,iter_num,bar):
         while True:
             templist = []
             episodeStep += 1
-            canonicalBoard = game.getCanonicalForm(board,curPlayer)
             temp = int(episodeStep < args.tempThreshold)
 
-            pi = mcts.getActionProb(canonicalBoard, temp=temp)
-            sym = game.getSymmetries(canonicalBoard, pi)
-            for b,p in sym:
-                trainExamples.append([b, curPlayer, p, None])
+            pi = mcts.getActionProb(board, curPlayer=curPlayer, temp=temp)
+            trainExamples.append([board, curPlayer, pi, None])
+            # sym = game.getSymmetries(board, pi)
+            # for b,p in sym:
+            #     trainExamples.append([b, curPlayer, p, None])
 
-            action = np.random.choice(len(pi), p=pi)
+            action = np.random.choice(len(pi), p=pi)            
             board, curPlayer = game.getNextState(board, curPlayer, action)
 
             r = game.getGameEnded(board, curPlayer)
 
             if r!=0:
-                templist.append(list((x[0],x[2],r*((-1)**(x[1]!=curPlayer))) for x in trainExamples))
+                templist.append(list((x[0],x[2],r*((-1)**(x[1]!=curPlayer)), curPlayer) for x in trainExamples))
                 returnlist.append(templist)
                 break
 
     return returnlist
 
 def AsyncTrainNetwork(game,args,trainhistory):
+    # create separate seeds for each worker
+    np.random.seed(iter_num)
+
     #set gpu
     os.environ["CUDA_VISIBLE_DEVICES"] = args.setGPU
     #create network for training
@@ -111,13 +118,16 @@ def AsyncTrainNetwork(game,args,trainhistory):
     nnet.save_checkpoint(folder=args.checkpoint, filename='train.pth.tar')
 
 def AsyncAgainst(game,args,iter_num,bar):
+    # create separate seeds for each worker
+    np.random.seed(iter_num)
+
     bar.suffix = "iter:{i}/{x} | Total: {total:} | ETA: {eta:}".format(i=iter_num+1,x=args.numAgainstPlayProcess,total=bar.elapsed_td, eta=bar.eta_td)
     bar.next()
 
     #set gpu
     if(args.multiGPU):
         if(iter_num%2==0):
-            os.environ["CUDA_VISIBLE_DEVICES"] = "2"
+            os.environ["CUDA_VISIBLE_DEVICES"] = "4"
         else:
             os.environ["CUDA_VISIBLE_DEVICES"] = "3"
     else:
@@ -127,7 +137,7 @@ def AsyncAgainst(game,args,iter_num,bar):
     config = tf.ConfigProto()  
     config.gpu_options.allow_growth=True  
     sess = tf.Session(config=config)
-
+              
     #create nn and load
     nnet = nn(game)
     pnet = nn(game)
@@ -140,12 +150,14 @@ def AsyncAgainst(game,args,iter_num,bar):
         pnet.load_checkpoint(folder=args.checkpoint, filename='best.pth.tar')
     except:
         print("load old model fail")
-        pass
+        filepath = os.path.join(args.checkpoint, "best.pth.tar")
+        print("XXX - {}, {}".format(filepath, os.path.exists(filepath+'.meta')))
+        pnet.save_checkpoint(folder=args.checkpoint, filename='best.pth.tar')
     pmcts = MCTS(game, pnet, args)
     nmcts = MCTS(game, nnet, args)
 
-    arena = Arena(lambda x: np.argmax(pmcts.getActionProb(x, temp=0)),
-                    lambda x: np.argmax(nmcts.getActionProb(x, temp=0)), game)
+    arena = Arena(lambda b, p: np.argmax(pmcts.getActionProb(canonicalBoard=b, curPlayer=p, temp=0)),
+                    lambda b, p: np.argmax(nmcts.getActionProb(canonicalBoard=b, curPlayer=p, temp=0)), game)
     arena.displayBar = True
     # each against process play the number of numPerProcessAgainst games.
     pwins, nwins, draws = arena.playGames(args.numPerProcessAgainst)

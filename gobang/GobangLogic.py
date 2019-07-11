@@ -11,13 +11,14 @@ Squares are stored and manipulated as (x,y) tuples.
 x is the column, y is the row.
 '''
 class Board():
-    def __init__(self, n):
+    def __init__(self, col, row):
         "Set up initial board configuration."
-        self.n = n
+        self.col = col
+        self.row = row
         # Create the empty board array.
-        self.pieces = [None]*self.n
-        for i in range(self.n):
-            self.pieces[i] = [0]*self.n
+        self.pieces = [None]*self.col
+        for i in range(self.col):
+            self.pieces[i] = [0]*self.row
 
     # add [][] indexer syntax to the Board
     def __getitem__(self, index): 
@@ -30,8 +31,8 @@ class Board():
         moves = set()  # stores the legal moves.
 
         # Get all empty locations.
-        for y in range(self.n):
-            for x in range(self.n):
+        for x in range(self.col):
+            for y in range(self.row):
                 if self[x][y] == 0:
                     moves.add((x, y))
         return list(moves)
@@ -40,8 +41,8 @@ class Board():
         """Returns True if has legal move else False
         """
         # Get all empty locations.
-        for y in range(self.n):
-            for x in range(self.n):
+        for x in range(self.col):
+            for y in range(self.row):
                 if self[x][y] == 0:
                     return True
         return False

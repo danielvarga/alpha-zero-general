@@ -52,10 +52,10 @@ class NNetWrapper(NeuralNet):
             # self.sess.run(tf.local_variables_initializer())
             while batch_idx < int(len(examples)/args.batch_size):
                 sample_ids = np.random.randint(len(examples), size=args.batch_size)
-                boards, pis, vs = list(zip(*[examples[i] for i in sample_ids]))
+                boards, pis, vs, players = list(zip(*[examples[i] for i in sample_ids]))
 
                 # predict and compute gradient and do SGD step
-                input_dict = {self.nnet.input_boards: boards, self.nnet.target_pis: pis, self.nnet.target_vs: vs, self.nnet.dropout: args.dropout, self.nnet.isTraining: True}
+                input_dict = {self.nnet.input_boards: boards, self.nnet.target_pis: pis, self.nnet.target_vs: vs, self.curPlayer: players, self.nnet.dropout: args.dropout, self.nnet.isTraining: True}
 
                 # measure data loading time
                 data_time.update(time.time() - end)
@@ -86,7 +86,7 @@ class NNetWrapper(NeuralNet):
             bar.finish()
 
 
-    def predict(self, board):
+    def predict(self, board, curPlayer):
         """
         board: np array with board
         """
@@ -97,7 +97,7 @@ class NNetWrapper(NeuralNet):
         board = board[np.newaxis, :, :]
 
         # run
-        prob, v = self.sess.run([self.nnet.prob, self.nnet.v], feed_dict={self.nnet.input_boards: board, self.nnet.dropout: 0, self.nnet.isTraining: False})
+        prob, v = self.sess.run([self.nnet.prob, self.nnet.v], feed_dict={self.nnet.input_boards: board, self.nnet.curPlayer:curPlayer, self.nnet.dropout: 0, self.nnet.isTraining: False})
 
         #print('PREDICTION TIME TAKEN : {0:03f}'.format(time.time()-start))
         return prob[0], v[0]

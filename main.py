@@ -18,14 +18,14 @@ args = dotdict({
     'numMCTSSims': 50,
     'cpuct': 4.0,
     'multiGPU': True,
-    'setGPU': '2,3',
+    'setGPU': '3,4',
     # The total number of games when self-playing is:
     # Total = numSelfPlayProcess * numPerProcessSelfPlay
-    'numSelfPlayProcess': 20,
+    'numSelfPlayProcess': 11,
     'numPerProcessSelfPlay': 20,
     # The total number of games when against-playing is:
     # Total = numAgainstPlayProcess * numPerProcessAgainst
-    'numAgainstPlayProcess': 20,
+    'numAgainstPlayProcess': 9,
     'numPerProcessAgainst': 20,
     'checkpoint': './temp/',
     'numItersForTrainExamplesHistory': 20,
@@ -34,6 +34,6 @@ args = dotdict({
 if __name__=="__main__":
     os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3' 
 
-    g = Game(6, 4)
+    g = Game(col=12, row=4, nir=7, defender=-1)
     c = Coach(g, args)
     c.learn()
