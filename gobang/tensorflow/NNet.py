@@ -45,7 +45,6 @@ class NNetWrapper(NeuralNet):
             pi_losses = AverageMeter()
             v_losses = AverageMeter()
             end = time.time()
-
             bar = Bar('Training Net', max=int(len(examples)/args.batch_size))
             batch_idx = 0
 
@@ -53,16 +52,19 @@ class NNetWrapper(NeuralNet):
             while batch_idx < int(len(examples)/args.batch_size):
                 sample_ids = np.random.randint(len(examples), size=args.batch_size)
                 boards, pis, vs, players = list(zip(*[examples[i] for i in sample_ids]))
+                players = np.expand_dims(players, 1)
 
                 # predict and compute gradient and do SGD step
-                input_dict = {self.nnet.input_boards: boards, self.nnet.target_pis: pis, self.nnet.target_vs: vs, self.curPlayer: players, self.nnet.dropout: args.dropout, self.nnet.isTraining: True}
+                input_dict = {self.nnet.input_boards: boards, self.nnet.target_pis: pis, self.nnet.target_vs: vs, self.nnet.curPlayer: players, self.nnet.dropout: args.dropout, self.nnet.isTraining: True}
 
                 # measure data loading time
                 data_time.update(time.time() - end)
 
                 # record loss
                 self.sess.run(self.nnet.train_step, feed_dict=input_dict)
-                pi_loss, v_loss = self.sess.run([self.nnet.loss_pi, self.nnet.loss_v], feed_dict=input_dict)
+                pi_loss, v_loss, prob = self.sess.run([self.nnet.loss_pi, self.nnet.loss_v, self.nnet.prob], feed_dict=input_dict)
+                # print("\nZZZZZZZZ min prob: ", prob.min())
+                
                 pi_losses.update(pi_loss, len(boards))
                 v_losses.update(v_loss, len(boards))
 
@@ -92,9 +94,10 @@ class NNetWrapper(NeuralNet):
         """
         # timing
         # start = time.time()
-
+       
         # preparing input
         board = board[np.newaxis, :, :]
+        curPlayer = np.array([[curPlayer]])
 
         # run
         prob, v = self.sess.run([self.nnet.prob, self.nnet.v], feed_dict={self.nnet.input_boards: board, self.nnet.curPlayer:curPlayer, self.nnet.dropout: 0, self.nnet.isTraining: False})

@@ -77,13 +77,16 @@ class MCTS():
 
         if s not in self.Ps:
             # leaf node
-            self.Ps[s], v = self.nnet.predict(canonicalBoard, curPlayer)
+            probs, v = self.nnet.predict(canonicalBoard, curPlayer)
+            
             valids = self.game.getValidMoves(canonicalBoard, 1)
-            self.Ps[s] = self.Ps[s]*valids      # masking invalid moves
+            self.Ps[s] = probs*valids      # masking invalid moves
             sum_Ps_s = np.sum(self.Ps[s])
             if sum_Ps_s > 0:
                 self.Ps[s] /= sum_Ps_s    # renormalize
             else:
+                print("probs: ", probs)
+                print("valids: ", valids)
                 # if all valid moves were masked make all valid moves equally probable
                 
                 # NB! All valid moves may be masked if either your NNet architecture is insufficient or you've get overfitting or something else.
@@ -113,10 +116,9 @@ class MCTS():
                     best_act = a
                     
         a = best_act
-        next_s, next_player = self.game.getNextState(canonicalBoard, 1, a)
-        next_s = self.game.getCanonicalForm(next_s, next_player)
+        next_s, next_player = self.game.getNextState(canonicalBoard, curPlayer, a)
 
-        v = self.search(next_s, -curPlayer)
+        v = self.search(next_s, next_player)
 
         if (s,a) in self.Qsa:
             self.Qsa[(s,a)] = (self.Nsa[(s,a)]*self.Qsa[(s,a)] + v)/(self.Nsa[(s,a)]+1)

@@ -7,8 +7,8 @@ import time, os
 from pickle import Pickler, Unpickler
 import tensorflow as tf
 import multiprocessing
-from gobang.tensorflow.NNet_tile import NNetWrapper as nn
-from gobang.GobangGame_tile import display
+from gobang.tensorflow.NNet import NNetWrapper as nn
+from gobang.GobangGame import display
 
 def AsyncSelfPlay(game,args,iter_num,bar):
     #set gpu
@@ -73,8 +73,6 @@ def AsyncSelfPlay(game,args,iter_num,bar):
     return returnlist
 
 def AsyncTrainNetwork(game,args,trainhistory):
-    # create separate seeds for each worker
-    np.random.seed(iter_num)
 
     #set gpu
     os.environ["CUDA_VISIBLE_DEVICES"] = args.setGPU
@@ -192,6 +190,7 @@ class Coach():
         res = []
         result = []
         bar = Bar('Self Play(each process)', max=self.args.numPerProcessSelfPlay)
+        # AsyncSelfPlay(self.game, self.args, 1, bar)
         for i in range(self.args.numSelfPlayProcess):
             res.append(pool.apply_async(AsyncSelfPlay,args=(self.game,self.args,i,bar,)))
         pool.close()
@@ -206,10 +205,11 @@ class Coach():
 
     def parallel_train_network(self,iter_num):
         print("Start train network")
-        pool = multiprocessing.Pool(processes=1)
-        pool.apply_async(AsyncTrainNetwork,args=(self.game,self.args,self.trainExamplesHistory,))
-        pool.close()
-        pool.join()
+        AsyncTrainNetwork(self.game, self.args, self.trainExamplesHistory)
+        # pool = multiprocessing.Pool(processes=1)
+        # pool.apply_async(AsyncTrainNetwork,args=(self.game,self.args,self.trainExamplesHistory,))
+        # pool.close()
+        # pool.join()
 
     def parallel_self_test_play(self,iter_num):
         pool = multiprocessing.Pool(processes=self.args.numAgainstPlayProcess)
@@ -217,8 +217,10 @@ class Coach():
         bar = Bar('Test Play', max=self.args.numAgainstPlayProcess)
         res = []
         result = []
-        for i in range(self.args.numAgainstPlayProcess):
-            res.append(pool.apply_async(AsyncAgainst,args=(self.game,self.args,i,bar)))
+        res.append(AsyncAgainst(self.game, self.args, 0, bar))
+        # xxx
+        # for i in range(self.args.numAgainstPlayProcess):
+        #     res.append(pool.apply_async(AsyncAgainst,args=(self.game,self.args,i,bar)))
         pool.close()
         pool.join()
 

@@ -21,12 +21,12 @@ args = dotdict({
     'setGPU': '3,4',
     # The total number of games when self-playing is:
     # Total = numSelfPlayProcess * numPerProcessSelfPlay
-    'numSelfPlayProcess': 11,
-    'numPerProcessSelfPlay': 20,
+    'numSelfPlayProcess': 1,
+    'numPerProcessSelfPlay': 3,
     # The total number of games when against-playing is:
     # Total = numAgainstPlayProcess * numPerProcessAgainst
-    'numAgainstPlayProcess': 9,
-    'numPerProcessAgainst': 20,
+    'numAgainstPlayProcess': 1,
+    'numPerProcessAgainst': 3,
     'checkpoint': './temp/',
     'numItersForTrainExamplesHistory': 20,
 })
