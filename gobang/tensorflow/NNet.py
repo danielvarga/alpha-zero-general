@@ -18,7 +18,7 @@ args = dotdict({
     'dropout': 0.3,
     'epochs': 10,
     'batch_size': 64,
-    'num_channels': 256,
+    'num_channels': 128,
 })
 
 class NNetWrapper(NeuralNet):
@@ -51,7 +51,7 @@ class NNetWrapper(NeuralNet):
             # self.sess.run(tf.local_variables_initializer())
             while batch_idx < int(len(examples)/args.batch_size):
                 sample_ids = np.random.randint(len(examples), size=args.batch_size)
-                boards, pis, vs, players = list(zip(*[examples[i] for i in sample_ids]))
+                boards, players, pis, vs = list(zip(*[examples[i] for i in sample_ids]))
                 players = np.expand_dims(players, 1)
 
                 # predict and compute gradient and do SGD step
@@ -62,8 +62,9 @@ class NNetWrapper(NeuralNet):
 
                 # record loss
                 self.sess.run(self.nnet.train_step, feed_dict=input_dict)
-                pi_loss, v_loss, prob = self.sess.run([self.nnet.loss_pi, self.nnet.loss_v, self.nnet.prob], feed_dict=input_dict)
-                # print("\nZZZZZZZZ min prob: ", prob.min())
+                pi_loss, v_loss, v = self.sess.run([self.nnet.loss_pi, self.nnet.loss_v, self.nnet.v], feed_dict=input_dict)
+                # print("target_v: {}".format(vs))
+                # print(" model_v: {}".format(v))
                 
                 pi_losses.update(pi_loss, len(boards))
                 v_losses.update(v_loss, len(boards))
@@ -100,7 +101,7 @@ class NNetWrapper(NeuralNet):
         curPlayer = np.array([[curPlayer]])
 
         # run
-        prob, v = self.sess.run([self.nnet.prob, self.nnet.v], feed_dict={self.nnet.input_boards: board, self.nnet.curPlayer:curPlayer, self.nnet.dropout: 0, self.nnet.isTraining: False})
+        prob, v = self.sess.run([self.nnet.prob, self.nnet.v], feed_dict={self.nnet.input_boards: board, self.nnet.curPlayer:curPlayer, self.nnet.dropout: 0.0, self.nnet.isTraining: False})
 
         #print('PREDICTION TIME TAKEN : {0:03f}'.format(time.time()-start))
         return prob[0], v[0]

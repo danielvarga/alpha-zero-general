@@ -55,7 +55,7 @@ class GobangGame(Game):
 
     # modified
     def getGameEnded(self, board, player):
-        # return 0 if not ended, 1 if player 1 won, -1 if player 1 lost
+        # return 0 if not ended, 1 if player won, -1 if player lost
         # player = 1
         b = Board(self.col, self.row)
         b.pieces = np.copy(board)

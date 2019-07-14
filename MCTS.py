@@ -2,6 +2,8 @@ import math
 import numpy as np
 EPS = 1e-8
 
+from gobang.GobangGame import display
+
 class MCTS():
     """
     This class handles the MCTS tree.
@@ -78,14 +80,17 @@ class MCTS():
         if s not in self.Ps:
             # leaf node
             probs, v = self.nnet.predict(canonicalBoard, curPlayer)
+            probs2, v2 = self.nnet.predict(canonicalBoard, -curPlayer)
             
-            valids = self.game.getValidMoves(canonicalBoard, 1)
+            valids = self.game.getValidMoves(canonicalBoard, curPlayer)
             self.Ps[s] = probs*valids      # masking invalid moves
             sum_Ps_s = np.sum(self.Ps[s])
             if sum_Ps_s > 0:
                 self.Ps[s] /= sum_Ps_s    # renormalize
             else:
+                display(canonicalBoard)
                 print("probs: ", probs)
+                print("opponent probs: ", probs)
                 print("valids: ", valids)
                 # if all valid moves were masked make all valid moves equally probable
                 
