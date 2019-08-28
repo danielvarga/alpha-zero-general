@@ -26,7 +26,7 @@ def AsyncSelfPlay(game,args,iter_num,bar):
     sess = tf.Session(config=config)
 
     #create nn and load weight
-    net = nn(game)
+    net = nn(game, args.displaybar)
     try:
         net.load_checkpoint(folder=args.checkpoint, filename='best.pth.tar')
     except:
@@ -41,8 +41,9 @@ def AsyncSelfPlay(game,args,iter_num,bar):
     for i in range(args.numPerProcessSelfPlay):
         # Each process play many games, so do not need initial NN every times when process created.
 
-        bar.suffix = "iter:{i}/{x} | Total: {total:} | ETA: {eta:}".format(i=i+1,x=args.numPerProcessSelfPlay,total=bar.elapsed_td, eta=bar.eta_td)
-        bar.next()
+        if args.displaybar:
+            bar.suffix = "iter:{i}/{x} | Total: {total:} | ETA: {eta:}".format(i=i+1,x=args.numPerProcessSelfPlay,total=bar.elapsed_td, eta=bar.eta_td)
+            bar.next()
 
         trainExamples = []
         board = game.getInitBoard()
@@ -77,7 +78,7 @@ def AsyncTrainNetwork(game,args,trainhistory):
     #set gpu
     os.environ["CUDA_VISIBLE_DEVICES"] = args.setGPU
     #create network for training
-    nnet = nn(game)
+    nnet = nn(game, args.displaybar)
     try:
         nnet.load_checkpoint(folder=args.checkpoint, filename='best.pth.tar')
     except:
@@ -119,8 +120,9 @@ def AsyncAgainst(game,args,iter_num,bar):
     # create separate seeds for each worker
     # np.random.seed(iter_num)
 
-    bar.suffix = "iter:{i}/{x} | Total: {total:} | ETA: {eta:}".format(i=iter_num+1,x=args.numAgainstPlayProcess,total=bar.elapsed_td, eta=bar.eta_td)
-    bar.next()
+    if args.displaybar:
+        bar.suffix = "iter:{i}/{x} | Total: {total:} | ETA: {eta:}".format(i=iter_num+1,x=args.numAgainstPlayProcess,total=bar.elapsed_td, eta=bar.eta_td)
+        bar.next()
 
     #set gpu
     if(args.multiGPU):
@@ -137,8 +139,8 @@ def AsyncAgainst(game,args,iter_num,bar):
     sess = tf.Session(config=config)
               
     #create nn and load
-    nnet = nn(game)
-    pnet = nn(game)
+    nnet = nn(game, args.displaybar)
+    pnet = nn(game, args.displaybar)
     try:
         nnet.load_checkpoint(folder=args.checkpoint, filename='train.pth.tar')
     except:
@@ -154,8 +156,7 @@ def AsyncAgainst(game,args,iter_num,bar):
     nmcts = MCTS(game, nnet, args)
 
     arena = Arena(lambda b, p: np.argmax(pmcts.getActionProb(canonicalBoard=b, curPlayer=p, temp=1)),
-                    lambda b, p: np.argmax(nmcts.getActionProb(canonicalBoard=b, curPlayer=p, temp=1)), game)
-    arena.displayBar = True
+                    lambda b, p: np.argmax(nmcts.getActionProb(canonicalBoard=b, curPlayer=p, temp=1)), game, displaybar=args.displaybar)
     # each against process play the number of numPerProcessAgainst games.
     pwins, nwins, draws = arena.playGames(args.numPerProcessAgainst)
     return pwins, nwins, draws
@@ -168,7 +169,7 @@ def CheckResultAndSaveNetwork(pwins,nwins,draws,game,args,iter_num):
         print('REJECTING NEW MODEL')
     else:
         print('ACCEPTING NEW MODEL')
-        net = nn(game)
+        net = nn(game, args.displaybar)
         net.load_checkpoint(folder=args.checkpoint, filename='train.pth.tar')
         net.save_checkpoint(folder=args.checkpoint, filename='best.pth.tar')
         net.save_checkpoint(folder=args.checkpoint, filename='checkpoint_' + str(iter_num) + '.pth.tar')

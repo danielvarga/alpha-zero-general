@@ -90,7 +90,7 @@ class MCTS():
             else:
                 display(canonicalBoard)
                 print("probs: ", probs)
-                print("opponent probs: ", probs)
+                print("opponent probs: ", probs2)
                 print("valids: ", valids)
                 # if all valid moves were masked make all valid moves equally probable
                 
