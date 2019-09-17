@@ -64,42 +64,43 @@ class GobangGame(Game):
         row = self.row
 
         # display(board)
+        opponent = - player
 
         for w in range(col):
             # if the offence has a full column, he won
-            if set(board[w][i] for i in range(self.row)) == {-self.defender}:
-                return -self.defender
+            if set(board[w][i] for i in range(self.row)) == {opponent}:
+                return opponent
             
             # if the offence has a row of len self.n_in_row, he won
             if (w in range(row - n + 1)):
                 for h in range(row):
-                    if set(board[i][h] for i in range(w, w + n)) == {-self.defender}:
-                        return -self.defender
+                    if set(board[i][h] for i in range(w, w + n)) == {opponent}:
+                        return opponent
 
             # if the offence has a full diagonal of length col, he won
             if (w in range(col - row + 1)):
-                if set(board[w+l][l] for l in range(row)) == {-self.defender}:
-                    return -self.defender
+                if set(board[w+l][l] for l in range(row)) == {opponent}:
+                    return opponent
             if (w in range(row-1, col)):
-                if set(board[w-l][l] for l in range(row)) == {-self.defender}:
-                    return -self.defender
+                if set(board[w-l][l] for l in range(row)) == {opponent}:
+                    return opponent
             
                     
             # if the offence has 3 in a corner diagonal, he won
-            if set((board[2][0], board[1][1], board[0][2])) == {-self.defender}:
-                return -self.defender
-            if set((board[col-3][0], board[col-2][1], board[col-1][2])) == {-self.defender}:
-                return -self.defender
-            if set((board[0][row-3], board[1][row-2], board[2][row-1])) == {-self.defender}:
-                return -self.defender
-            if set((board[col-1][row-3], board[col-2][row-2], board[col-3][row-1])) == {-self.defender}:
-                return -self.defender
+            if set((board[2][0], board[1][1], board[0][2])) == {opponent}:
+                return opponent
+            if set((board[col-3][0], board[col-2][1], board[col-1][2])) == {opponent}:
+                return opponent
+            if set((board[0][row-3], board[1][row-2], board[2][row-1])) == {opponent}:
+                return opponent
+            if set((board[col-1][row-3], board[col-2][row-2], board[col-3][row-1])) == {opponent}:
+                return opponent
 
             # if the offence has two in one of the northern corner diagonals, he won
-            if set((board[1][0], board[0][1])) == {-self.defender}:
-                return -self.defender
-            if set((board[col-2][0], board[col-1][1])) == {-self.defender}:
-                return -self.defender
+            if set((board[1][0], board[0][1])) == {opponent}:
+                return opponent
+            if set((board[col-2][0], board[col-1][1])) == {opponent}:
+                return opponent
             
         if b.has_legal_moves():
             return 0
