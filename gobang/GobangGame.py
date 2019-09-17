@@ -134,27 +134,62 @@ class GobangGame(Game):
         # 8x8 numpy array (canonical board)
         return board.tostring()
 
+class bcolors:
+    HEADER = '\033[95m'
+    OKBLUE = '\033[94m'
+    OKGREEN = '\033[92m'
+    WARNING = '\033[93m'
+    FAIL = '\033[91m'
+    ENDC = '\033[0m'
+    BOLD = '\033[1m'
+    UNDERLINE = '\033[4m'
 
-def display(board):
-    col = board.shape[0]
-    row = board.shape[1]
-
-    print("   |", end="")
-    for x in range(col):
-        print("{:3d}|".format(x), end="")
-    print("")
-    print(" -----------------------")
-    for y in range(row):
-        print("{:3d}|".format(y), end="")    # print the row #
-        for x in range(col):
-            piece = board[x][y]    # get the piece to print
-            if piece == -1:
-                print(" b  ", end="")
-            elif piece == 1:
-                print(" W  ", end="")
+def display(board, end = False):
+    M,N = board.shape[:2]
+    print(" "*(max(M+6, 30)))
+    print("=== Gobang Game ===")
+    print(" "*(max(M+6, 30)))
+    print("  ", end = '')
+    for i in range(M):
+        print(str(i)[-1], end = '')
+    print(' '*10)
+    print(" "+"="*(M+2))
+    for x in range(N):
+        print("{}|".format(x), end = '')
+        for y in range(M):
+            piece = board[y][x]
+            if(piece>0):
+                print("{}{}{}".format(bcolors.WARNING, "o", bcolors.ENDC), end = '')
+            elif(piece<0):
+                print("{}{}{}".format(bcolors.FAIL, "x", bcolors.ENDC), end = '')
             else:
-                print(" -  ", end="")
-                    
+                print(" ", end = '')
         print("|")
+    print((" "+"="*(M+2)))
+    print("\n", end = "")
+    if(not end):
+        print('\033[{}A'.format(N+8))
 
-    print("   -----------------------")
+#def display(board):
+#    col = board.shape[0]
+#    row = board.shape[1]
+#
+#    print("   |", end="")
+#    for x in range(col):
+#        print("{:3d}|".format(x), end="")
+#    print("")
+#    print(" -----------------------")
+#    for y in range(row):
+#        print("{:3d}|".format(y), end="")    # print the row #
+#        for x in range(col):
+#            piece = board[x][y]    # get the piece to print
+#            if piece == -1:
+#                print(" b  ", end="")
+#            elif piece == 1:
+#                print(" W  ", end="")
+#            else:
+#                print(" -  ", end="")
+#                    
+#        print("|")
+#
+#    print("   -----------------------")
