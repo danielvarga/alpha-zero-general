@@ -23,7 +23,8 @@ class HumanGobangPlayer():
         valid = self.game.getValidMoves(board, 1)
         for i in range(len(valid)):
             if valid[i]:
-                if verbose: print("({} {}) ".format(int(i/self.game.row), int(i%self.game.row)), end="")
+                if verbose:
+                    print("({} {}) ".format(int(i/self.game.row), int(i%self.game.row)), end="")
         if verbose: print("")
         while True:
             a = input()
@@ -33,7 +34,10 @@ class HumanGobangPlayer():
             if valid[a]:
                 break
             else:
-                if verbose: print('Invalid')
+                x = int(a/self.game.row)
+                y = int(a%self.game.row)
+                print('\033[1A{} {}      Invalid '.format(x,y), end = '')
+                #print(" "*30+'\r', end = '')
 
         return a
 

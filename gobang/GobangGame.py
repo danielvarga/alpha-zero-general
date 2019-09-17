@@ -146,13 +146,17 @@ class bcolors:
 
 def display(board, end = False):
     M,N = board.shape[:2]
-    print(" "*(max(M+6, 30)))
+
+    print("\n"+" "*30)
     print("=== Gobang Game ===")
     print(" "*(max(M+6, 30)))
+    
+    # Print the column indexis
     print("  ", end = '')
     for i in range(M):
         print(str(i)[-1], end = '')
     print(' '*10)
+
     print(" "+"="*(M+2))
     for x in range(N):
         print("{}|".format(x), end = '')
@@ -166,9 +170,13 @@ def display(board, end = False):
                 print(" ", end = '')
         print("|")
     print((" "+"="*(M+2)))
+
+    # Go back, if not finished yet
     print("\n", end = "")
     if(not end):
-        print('\033[{}A'.format(N+8))
+        print('\033[{}A'.format(N+9))
+    else:
+        print('')
 
 #def display(board):
 #    col = board.shape[0]
