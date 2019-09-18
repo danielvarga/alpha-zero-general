@@ -85,11 +85,11 @@ class GobangGame(Game):
 
             # if the offence has a row of len 4 in the border, he won
             #half = int(math.ceil(n/2))
-            half = 4
-            if (w in [0,col-half]):
-                for h in range(row):
-                    if set(board[i][h] for i in range(w, w + h)) == {opponent}:
-                        return True
+            #half = 4
+            #if (w in [0,col-half]):
+            #    for h in range(row):
+            #        if set(board[i][h] for i in range(w, w + h)) == {opponent}:
+            #            return True
             
             # if the offence has a full diagonal of length col, he won
             if (w in range(col - row + 1)):
