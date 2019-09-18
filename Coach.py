@@ -67,7 +67,9 @@ def AsyncSelfPlay(game,args,iter_num,bar):
             r = game.getGameEnded(board, curPlayer)
 
             if r!=0: # game is over
-                templist.append(list((x[0], x[1], x[2], r*((-1)**(x[1]!=1))) for x in trainExamples))
+                for i,x in enumerate(reversed(trainExamples)):
+                    reward = (0.99**i)*r*((-1)**(x[1]!=curPlayer))
+                    templist.append(list((x[0], x[1], x[2], reward )))
                 returnlist.append(templist)
                 break
 
