@@ -4,7 +4,7 @@ sys.path.append('..')
 from Game import Game
 from .GobangLogic import Board
 import numpy as np
-
+import math
 
 # defender=1: white aims for draw
 # defender=-1: black aims for draw
@@ -83,6 +83,13 @@ class GobangGame(Game):
                     if set(board[i][h] for i in range(w, w + n)) == {opponent}:
                         return True
 
+            # if the offence has a row of len ceil(n/2) in the border, he won
+            half = int(math.ceil(n/2))
+            if (w in [0,col-half]):
+                for h in range(row):
+                    if set(board[i][h] for i in range(w, w + h)) == {opponent}:
+                        return True
+            
             # if the offence has a full diagonal of length col, he won
             if (w in range(col - row + 1)):
                 if set(board[w+l][l] for l in range(row)) == {opponent}:
