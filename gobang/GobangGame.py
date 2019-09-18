@@ -54,9 +54,9 @@ class GobangGame(Game):
         return np.array(valids)
     
     def getGameEnded(self, board, player):
-        if(has_lost(self, board, player)):
+        if(self.has_lost(board, player)):
             return -1
-        elif(is_win(self, board, -player)):
+        elif(self.has_lost(board, -player)):
             return 1
         else:
             return 0
