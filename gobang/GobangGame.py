@@ -154,22 +154,22 @@ def display(board, end = False):
     # Print the column indexis
     print("  ", end = '')
     for i in range(M):
-        print(str(i)[-1], end = '')
+        print(str(i)[-1]+" ", end = '')
     print(' '*10)
 
-    print(" "+"="*(M+2))
+    print(" +"+"=="*(M)+"+")
     for x in range(N):
         print("{}|".format(x), end = '')
         for y in range(M):
             piece = board[y][x]
             if(piece>0):
-                print("{}{}{}".format(bcolors.WARNING, "o", bcolors.ENDC), end = '')
+                print("{}{}{}".format(bcolors.WARNING, "o ", bcolors.ENDC), end = '')
             elif(piece<0):
-                print("{}{}{}".format(bcolors.FAIL, "x", bcolors.ENDC), end = '')
+                print("{}{}{}".format(bcolors.FAIL, "x ", bcolors.ENDC), end = '')
             else:
-                print(" ", end = '')
+                print("  ", end = '')
         print("|")
-    print((" "+"="*(M+2)))
+    print((" +"+"=="*(M)+"+"))
 
     # Go back, if not finished yet
     print("\n", end = "")
