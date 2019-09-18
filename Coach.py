@@ -127,9 +127,9 @@ def AsyncAgainst(game,args,iter_num,bar):
     #set gpu
     if(args.multiGPU):
         if(iter_num%2==0):
-            os.environ["CUDA_VISIBLE_DEVICES"] = "4"
+            os.environ["CUDA_VISIBLE_DEVICES"] = "2"
         else:
-            os.environ["CUDA_VISIBLE_DEVICES"] = "3"
+            os.environ["CUDA_VISIBLE_DEVICES"] = "1"
     else:
         os.environ["CUDA_VISIBLE_DEVICES"] = args.setGPU
 
