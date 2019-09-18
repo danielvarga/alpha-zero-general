@@ -52,7 +52,8 @@ class GobangGame(Game):
         for x, y in legalMoves:
             valids[self.row * x + y] = 1
         return np.array(valids)
-def getGameEnded(self, board, player):
+    
+    def getGameEnded(self, board, player):
         if(has_lost(self, board, player)):
             return -1
         elif(is_win(self, board, -player)):
@@ -61,8 +62,7 @@ def getGameEnded(self, board, player):
             return 0
     # modified
     def has_lost(self, board, player):
-        # return 0 if not ended, 1 if player won, -1 if player lost
-        # player = 1
+        # return True, if player lost, else False
         b = Board(self.col, self.row)
         b.pieces = np.copy(board)
         n = self.n_in_row
