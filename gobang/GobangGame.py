@@ -78,7 +78,7 @@ class GobangGame(Game):
                 return True
             
             # if the offence has a row of len self.n_in_row, he won
-            if (w in range(row - n + 1)):
+            if (w in range(col - n + 1)):
                 for h in range(row):
                     if set(board[i][h] for i in range(w, w + n)) == {opponent}:
                         return True
