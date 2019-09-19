@@ -30,6 +30,7 @@ def AsyncSelfPlay(game,args,iter_num,bar):
     try:
         net.load_checkpoint(folder=args.checkpoint, filename='best.pth.tar')
     except:
+        print("No best model found")
         pass
     mcts = MCTS(game, net,args)
 
@@ -67,9 +68,11 @@ def AsyncSelfPlay(game,args,iter_num,bar):
             r = game.getGameEnded(board, curPlayer)
 
             if r!=0: # game is over
+                mylist = []
                 for i,x in enumerate(reversed(trainExamples)):
                     reward = (0.99**i)*r*((-1)**(x[1]!=curPlayer))
-                    templist.append(list((x[0], x[1], x[2], reward )))
+                    mylist.append((x[0], x[1], x[2], reward))
+                templist.append(list(mylist))
                 returnlist.append(templist)
                 break
 
