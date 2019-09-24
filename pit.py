@@ -4,8 +4,10 @@ from gobang.GobangGame import GobangGame, display
 from gobang.GobangPlayers import *
 from gobang.tensorflow.NNet import NNetWrapper as NNet
 import os
+import argparse
 import numpy as np
 import tensorflow as tf
+from matplotlib import pyplot as plt
 import multiprocessing
 from utils import *
 from pytorch_classification.utils import Bar, AverageMeter
@@ -65,6 +67,11 @@ if __name__=="__main__":
     1. The number of PlayPool should not over your CPU's core number.
     2. Make sure all Neural Network which each process created can store in VRAM at same time. Check your NN size before use this.
     """
+
+    parser = argparse.ArgumentParser(description='Struggle your Models with each other')
+    parser.add_argument('-mode', dest = 'mode', help='Choose the mode: tournament, human, one2one')
+    modeargs = parser.parse_args()
+
     args = dotdict({
     'numMCTSSims': 25,
     'cpuct': 3,
@@ -112,13 +119,52 @@ if __name__=="__main__":
     # all players
     rp = RandomPlayer(g).play
     hp = HumanGobangPlayer(g).play
+    heuristic = Heuristic(g).play
 
     # nnet players
     n1 = NNet(g)
     n1.load_checkpoint('./temp/','best.pth.tar')
-    args1 = dotdict({'numMCTSSims': 50, 'cpuct':3.0})
+
+    args1 = dotdict({'numMCTSSims': 50, 'cpuct':3.0, 'multiGPU':False})
     mcts1 = MCTS(g, n1, args1)
     n1p = lambda b, p: np.argmax(mcts1.getActionProb(b, p, temp=0))
 
-    arena = Arena.Arena(n1p, hp, g, display=display)
-    print(arena.playGames(2, verbose=True))
+    all = {
+        'Random': rp,
+        'Best NN': n1p,
+        'Heuristic': heuristic,
+    }
+    if modeargs.mode == 'human':
+        arena = Arena.Arena(n1p, hp, g, display=display)
+        print(arena.playGames(2, verbose=True))
+    elif modeargs.mode == 'one2one':
+        arena = Arena.Arena(rp, heuristic, g, display=display)
+        print(arena.playGames(2, verbose=True))
+    elif modeargs.mode == 'one2all':
+        results = []
+        y = []
+        for name,player in all.items():
+            arena = Arena.Arena(player,rp, g, display=display)
+            firstWin, secondWin, draw = arena.playGames(2, verbose=False)
+            rate = (firstWin*3 +draw)/ (3*firstWin+3*secondWin+3*draw)
+            results.append(rate)
+            y.append(name)
+        plt.plot(y, results)
+        plt.show()
+    elif modeargs.mode == 'tournament':
+        results = [[""]+[name for name,p in all.items()]]
+        for name1,player1 in all.items():
+            row = [name1]
+            for name2,player2 in all.items():
+                arena = Arena.Arena(player1, player2, g, display=display)
+                firstWin, secondWin, draw = arena.playGames(2, verbose=False)
+                rate = (firstWin*3 +draw)/ (3*firstWin+3*secondWin+3*draw)
+                row.append(rate)
+                print(name1, name2,rate)
+            results.append(row)
+        for row in results:
+            for item in row:
+                print("{:>10}".format(item), end = '')
+            print('')
+    else:
+        print('Mode not found: {}'.format(modeargs.mode))
