@@ -30,6 +30,28 @@ class Heuristic():
         else:
             print("Invalid player!!!", curPlayer)
 
+    def random_play(self, board, curPlayer):
+        if(curPlayer != 0):
+            mtx = self.get_field_stregth_mtx(board, 1)
+            probs = np.array(mtx).flatten()
+            a = np.random.choice(range(len(probs)), p = probs)
+            return a
+        
+    def line_sum(self, board):
+        sum = 0.0
+        for line in self.Lines:
+            enemyLess = True
+            emptyNum = 0
+            for x,y in line:
+                if(board[x][y]==-1):
+                    enemyLess = False
+                    break;
+                elif(board[x][y]==0):
+                    emptyNum += 1
+            if(enemyLess):
+                sum += 2.0**(-emptyNum)
+        return sum
+             
     def greedy(self, board):
         for x in range(self.M):
             for y in range(self.N):
@@ -73,6 +95,9 @@ class Heuristic():
                 print("")
             mtx = mtx.transpose()
 
+        if np.max(mtx) == 0.0:
+            x,y = self.greedy(board)
+            mtx[x][y]=1.0
         return mtx
 
        
@@ -144,7 +169,12 @@ class HumanGobangPlayer():
         while True:
             a = input()
 
-            x,y = [int(x) for x in a.split(' ')]
+            try:
+                x,y = [int(x) for x in a.split(' ')]
+            except:
+                print("Bad value, try again")
+                a = input()
+                x,y = [int(x) for x in a.split(' ')]
             a = self.game.row * x + y if x!= -1 else self.game.row * self.game.col
             if valid[a]:
                 break

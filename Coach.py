@@ -9,6 +9,9 @@ import tensorflow as tf
 import multiprocessing
 from gobang.tensorflow.NNet import NNetWrapper as nn
 from gobang.GobangGame import display
+from gobang.GobangPlayers import *
+import logging
+from utils import *
 
 def AsyncSelfPlay(game,args,iter_num,bar):
     #set gpu
@@ -32,7 +35,7 @@ def AsyncSelfPlay(game,args,iter_num,bar):
     except:
         print("No best model found")
         pass
-    mcts = MCTS(game, net,args)
+    mcts = MCTS(game, net,args, args.lambdaHeur)
 
     # create separate seeds for each worker
     np.random.seed(iter_num)
@@ -43,7 +46,8 @@ def AsyncSelfPlay(game,args,iter_num,bar):
         # Each process play many games, so do not need initial NN every times when process created.
 
         if args.displaybar:
-            bar.suffix = "iter:{i}/{x} | Total: {total:} | ETA: {eta:}".format(i=i+1,x=args.numPerProcessSelfPlay,total=bar.elapsed_td, eta=bar.eta_td)
+            bar.suffix = "iter:{i}/{x} | Total: {total:} | ETA: {eta:}".format(
+                i=i+1,x=args.numPerProcessSelfPlay,total=bar.elapsed_td, eta=bar.eta_td)
             bar.next()
 
         trainExamples = []
@@ -68,9 +72,17 @@ def AsyncSelfPlay(game,args,iter_num,bar):
             r = game.getGameEnded(board, curPlayer)
 
             if r!=0: # game is over
+                #reward0 = game.getReward(board, curPlayer)
+                reward0 = r
                 mylist = []
+                if False :
+                    print("\n",reward0,r, curPlayer, "\n")
+                    display(board, end = True)
+                    print("")
+
+                coeff = 0.3 if reward0 > 0.0 else 0.3
                 for i,x in enumerate(reversed(trainExamples)):
-                    reward = (0.99**i)*r*((-1)**(x[1]!=curPlayer))
+                    reward = (coeff**(i//2))*reward0*((-1)**(x[1]!=curPlayer))
                     mylist.append((x[0], x[1], x[2], reward))
                 templist.append(list(mylist))
                 returnlist.append(templist)
@@ -109,6 +121,9 @@ def AsyncTrainNetwork(game,args,trainhistory):
     trainExamples = []
     for e in trainhistory:
         trainExamples.extend(e)
+
+    #for e in trainhistory[:10]:
+    #    print(e)
     #---save history---
     folder = args.checkpoint
     if not os.path.exists(folder):
@@ -126,15 +141,16 @@ def AsyncAgainst(game,args,iter_num,bar):
     # np.random.seed(iter_num)
 
     if args.displaybar:
-        bar.suffix = "iter:{i}/{x} | Total: {total:} | ETA: {eta:}".format(i=iter_num+1,x=args.numAgainstPlayProcess,total=bar.elapsed_td, eta=bar.eta_td)
+        bar.suffix = "iter:{i}/{x} | Total: {total:} | ETA: {eta:}".format(
+            i=iter_num+1,x=args.numAgainstPlayProcess,total=bar.elapsed_td, eta=bar.eta_td)
         bar.next()
 
     #set gpu
     if(args.multiGPU):
         if(iter_num%2==0):
-            os.environ["CUDA_VISIBLE_DEVICES"] = "2"
-        else:
             os.environ["CUDA_VISIBLE_DEVICES"] = "1"
+        else:
+            os.environ["CUDA_VISIBLE_DEVICES"] = "2"
     else:
         os.environ["CUDA_VISIBLE_DEVICES"] = args.setGPU
 
@@ -157,11 +173,12 @@ def AsyncAgainst(game,args,iter_num,bar):
         print("load old model fail")
         filepath = os.path.join(args.checkpoint, "best.pth.tar")
         pnet.save_checkpoint(folder=args.checkpoint, filename='best.pth.tar')
-    pmcts = MCTS(game, pnet, args)
-    nmcts = MCTS(game, nnet, args)
+    pmcts = MCTS(game, pnet, args, args.lambdaHeur)
+    nmcts = MCTS(game, nnet, args, args.lambdaHeur)
 
     arena = Arena(lambda b, p: np.argmax(pmcts.getActionProb(canonicalBoard=b, curPlayer=p, temp=1)),
-                    lambda b, p: np.argmax(nmcts.getActionProb(canonicalBoard=b, curPlayer=p, temp=1)), game, displaybar=args.displaybar)
+                  lambda b, p: np.argmax(nmcts.getActionProb(canonicalBoard=b, curPlayer=p, temp=1)),
+                  game, displaybar=args.displaybar)
     # each against process play the number of numPerProcessAgainst games.
     pwins, nwins, draws = arena.playGames(args.numPerProcessAgainst)
     return pwins, nwins, draws
@@ -178,7 +195,29 @@ def CheckResultAndSaveNetwork(pwins,nwins,draws,game,args,iter_num):
         net.load_checkpoint(folder=args.checkpoint, filename='train.pth.tar')
         net.save_checkpoint(folder=args.checkpoint, filename='best.pth.tar')
         net.save_checkpoint(folder=args.checkpoint, filename='checkpoint_' + str(iter_num) + '.pth.tar')
+        logCurrentCapabilities(game, iter_num, args)
+        
+def logCurrentCapabilities(game, iter_num, args):
+    # improved nnet player
+    n2 = nn(game)
+    n2.load_checkpoint('./temp/','best.pth.tar')
+    args2 = dotdict({'numMCTSSims': args.numMCTSSims, 'cpuct':args.cpuct, 'multiGPU':True})
+    mcts2 = MCTS(game, n2, args2, lambdaHeur=args.lambdaHeur)
+    n2p =  lambda b, p: np.argmax(mcts2.getActionProb(b, p, temp=0))
 
+    # Heuristic player:
+    heuristic = Heuristic(game).play
+
+    # Random Player:
+    rp = RandomPlayer(game).play
+
+    arena = Arena(n2p, heuristic,  game, display=display)
+    resultHeur = "{} {}".format(*arena.playGames(40, verbose=False)[:2])
+    arena = Arena(n2p, rp,  game, display=display)
+    resultRand = "{} {}".format(*arena.playGames(40, verbose=False)[:2])
+    logging.info("Iter:{} Heuristic: {} Random: {}".format(iter_num, resultHeur, resultRand))
+    print("Iter:{} Heuristic: {} Random: {}\n".format(iter_num, resultHeur, resultRand))
+    
 class Coach():
     """
     This class executes the self-play + learning. It uses the functions defined
@@ -264,7 +303,8 @@ class Coach():
         It then pits the new neural network against the old one and accepts it
         only if it wins >= updateThreshold fraction of games.
         """
-
+        logging.basicConfig(filename='capabilities.log',level=logging.DEBUG)
+        logging.info("============== New Run ==============")
         for i in range(1, self.args.numIters+1):
             print('------ITER ' + str(i) + '------')
             iterationTrainExamples = deque([], maxlen=self.args.maxlenOfQueue)
@@ -274,3 +314,5 @@ class Coach():
             self.parallel_train_network(i)
             self.trainExamplesHistory.clear()
             self.parallel_self_test_play(i)
+            # Reduce influence of lambdaHeur
+            #self.args.lambdaHeur*=0.95

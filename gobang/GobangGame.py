@@ -52,8 +52,26 @@ class GobangGame(Game):
         for x, y in legalMoves:
             valids[self.row * x + y] = 1
         return np.array(valids)
-    
+
+    def emptyFields(self, board):
+        emptyNum = 0
+        N,M = np.shape(board)
+        for i in range(N):
+            for j in range(M):
+                if(board[i][j]==0):
+                    emptyNum+=1
+
+        return float(emptyNum+1)
+
+    def getReward(self, board, winner):
+        return winner + winner*self.emptyFields(board)/20.0
+        
     def getGameEnded(self, board, player):
+        """
+        Return the Reward for the current board:
+        empty_field  : if GAME OVER
+        0             : if game is not over
+        """
         if(self.has_lost(board, player)):
             return -1
         elif(self.has_lost(board, -player)):
