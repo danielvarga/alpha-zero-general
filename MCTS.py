@@ -33,12 +33,16 @@ class MCTS():
             probs: a policy vector where the probability of the ith action is
                    proportional to Nsa[(s,a)]**(1./temp)
         """
+        self.endNum = 0
+        self.win = 0
         for i in range(self.args.numMCTSSims):
             self.search(canonicalBoard, curPlayer)
 
+        #print(self.endNum, self.win, self.args.numMCTSSims)
         s = self.game.stringRepresentation(canonicalBoard)
         counts = [self.Nsa[(s,a)] if (s,a) in self.Nsa else 0 for a in range(self.game.getActionSize())]
-        
+        #print(np.reshape(counts[:-1], (8, 4)).transpose())
+        #display(canonicalBoard, end = True)
         if temp==0:
             bestA = np.argmax(counts)
             probs = [0]*len(counts)
@@ -48,7 +52,6 @@ class MCTS():
         counts = [x**(1./temp) for x in counts]
         probs = [x/float(sum(counts)) for x in counts]
         return probs
-
 
     def search(self, canonicalBoard, curPlayer):
         """
@@ -75,6 +78,8 @@ class MCTS():
         if s not in self.Es:
             self.Es[s] = self.game.getGameEnded(canonicalBoard, curPlayer)
         if self.Es[s]!=0:
+            self.endNum+=1
+            self.win += (curPlayer == 1)
             # terminal node
             return -self.Es[s]
 
@@ -85,11 +90,14 @@ class MCTS():
             if self.lambdaHeur > 0.0:
                 mtx = self.heuristic.get_field_stregth_mtx(canonicalBoard, 1)
                 mtx = np.append(mtx, [0.0])
-                mtx /= np.max(mtx)
-                probs /=np.max(probs)
+                #mtx /= np.max(mtx)
+                #probs /=np.max(probs)
                 probs = (1.0-self.lambdaHeur)*probs + self.lambdaHeur*np.resize(mtx,(np.prod(mtx.shape)))
-                #probs*=np.resize(mtx,(np.prod(mtx.shape)))
-
+                #probs = np.resize(mtx,(np.prod(mtx.shape)))
+                #v = (1.0-self.lambdaHeur)*v+self.lambdaHeur*v0    
+            v = -curPlayer / (self.heuristic.line_sum(canonicalBoard)+ 1.0)
+            probs+=np.random.dirichlet([0.3]*len(probs))
+            
             valids = self.game.getValidMoves(canonicalBoard, curPlayer)
             self.Ps[s] = probs*valids      # masking invalid moves
             sum_Ps_s = np.sum(self.Ps[s])

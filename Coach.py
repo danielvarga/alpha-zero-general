@@ -61,28 +61,31 @@ def AsyncSelfPlay(game,args,iter_num,bar):
             temp = int(episodeStep < args.tempThreshold)
 
             pi = mcts.getActionProb(board, curPlayer=curPlayer, temp=temp)
-            trainExamples.append([board, curPlayer, pi, None])
-            # sym = game.getSymmetries(board, pi)
-            # for b,p in sym:
-            #     trainExamples.append([b, curPlayer, p, None])
-
             action = np.random.choice(len(pi), p=pi)
+            mtx = mcts.heuristic.get_field_stregth_mtx(board, 1)
+            mtx = np.append(mtx, [0.0])
+            #pi= np.resize(mtx,(np.prod(mtx.shape)))
+            #pi/=float(sum(pi))
+            trainExamples.append([board, curPlayer, pi, None])
+            #print("www\n",board.transpose(), curPlayer,"\n")
+            #print(np.resize(pi[:-1],(8,4) ).transpose())
+
+            #action = np.random.choice(len(pi), p=pi)
             board, curPlayer = game.getNextState(board, curPlayer, action)
 
             r = game.getGameEnded(board, curPlayer)
 
             if r!=0: # game is over
-                #reward0 = game.getReward(board, curPlayer)
                 reward0 = r
                 mylist = []
                 if False :
-                    print("\n",reward0,r, curPlayer, "\n")
+                    print("\n",r, curPlayer, "\n")
                     display(board, end = True)
                     print("")
 
-                coeff = 0.3 if reward0 > 0.0 else 0.3
                 for i,x in enumerate(reversed(trainExamples)):
-                    reward = (coeff**(i//2))*reward0*((-1)**(x[1]!=curPlayer))
+                    #reward0 = -curPlayer / (mcts.heuristic.line_sum(board)+ 1.0)
+                    reward = (args.coeff**(i//2))*reward0*((-1)**(x[1]!=curPlayer))
                     mylist.append((x[0], x[1], x[2], reward))
                 templist.append(list(mylist))
                 returnlist.append(templist)
@@ -120,7 +123,7 @@ def AsyncTrainNetwork(game,args,trainhistory):
     #---extend history---
     trainExamples = []
     for e in trainhistory:
-        trainExamples.extend(e)
+        trainExamples.extend(np.array(e))
 
     #for e in trainhistory[:10]:
     #    print(e)
@@ -135,6 +138,13 @@ def AsyncTrainNetwork(game,args,trainhistory):
     #------------------
     nnet.train(trainExamples)
     nnet.save_checkpoint(folder=args.checkpoint, filename='train.pth.tar')
+
+    probs, v =  nnet.predict(np.zeros((8,4)), 1)
+    probs = np.resize(probs[:-1], (8,4)).transpose()
+    print(probs)
+    heur = Heuristic(game)
+    mtx = heur.get_field_stregth_mtx(np.zeros((8,4)), 1).transpose()
+    print(mtx/np.sum(mtx))
 
 def AsyncAgainst(game,args,iter_num,bar):
     # create separate seeds for each worker
@@ -315,4 +325,5 @@ class Coach():
             self.trainExamplesHistory.clear()
             self.parallel_self_test_play(i)
             # Reduce influence of lambdaHeur
-            #self.args.lambdaHeur*=0.95
+            self.args.lambdaHeur*=0.95
+            self.args.cpuct*=0.95

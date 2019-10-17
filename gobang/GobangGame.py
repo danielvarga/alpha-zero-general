@@ -72,12 +72,19 @@ class GobangGame(Game):
         empty_field  : if GAME OVER
         0             : if game is not over
         """
-        if(self.has_lost(board, player)):
-            return -1
-        elif(self.has_lost(board, -player)):
-            return 1
+        if self.has_lost(board, -1):
+           return player
+        elif(np.min(np.absolute(board))==1):
+           return -player
         else:
-            return 0
+           return 0
+        # if(self.has_lost(board, player)):
+        #     return -1
+        # elif(self.has_lost(board, -player)):
+        #     return 1
+        # else:
+        #     return 0
+
     # modified
     def has_lost(self, board, player):
         # return True, if player lost, else False

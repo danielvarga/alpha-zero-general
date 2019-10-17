@@ -14,10 +14,10 @@ import tensorflow as tf
 from .GobangNNet import GobangNNet as onnet
 
 args = dotdict({
-    'lr': 0.001,
-    'dropout': 0.3,
+    'lr': 0.005,
+    'dropout': 0.0,
     'epochs': 10,
-    'batch_size': 64,
+    'batch_size': 32,
     'num_channels': 128,
 })
 
@@ -56,17 +56,22 @@ class NNetWrapper(NeuralNet):
                 players = np.expand_dims(players, 1)
 
                 # predict and compute gradient and do SGD step
-                input_dict = {self.nnet.input_boards: boards, self.nnet.target_pis: pis, self.nnet.target_vs: vs, self.nnet.curPlayer: players, self.nnet.dropout: args.dropout, self.nnet.isTraining: True}
+                input_dict = {self.nnet.input_boards: boards, self.nnet.target_pis: pis,
+                              self.nnet.target_vs: vs, self.nnet.curPlayer: players,
+                              self.nnet.dropout: args.dropout, self.nnet.isTraining: True}
 
                 # measure data loading time
                 data_time.update(time.time() - end)
 
                 # record loss
                 self.sess.run(self.nnet.train_step, feed_dict=input_dict)
-                pi_loss, v_loss, v = self.sess.run([self.nnet.loss_pi, self.nnet.loss_v, self.nnet.v], feed_dict=input_dict)
-                # print("target_v: {}".format(vs))
-                # print(" model_v: {}".format(v))
-                
+                pi_loss, v_loss, v, input, output = self.sess.run(
+                    [self.nnet.loss_pi,self.nnet.loss_v, self.nnet.v, self.nnet.input,
+                     self.nnet.output], feed_dict=input_dict)
+                #print(input, output, pis)
+                #print("target_v: {}".format(vs))
+                #print(" model_v: {}".format(v))
+                #print(v_loss)
                 pi_losses.update(pi_loss, len(boards))
                 v_losses.update(v_loss, len(boards))
 
@@ -89,7 +94,6 @@ class NNetWrapper(NeuralNet):
                     )
                     bar.next()
             bar.finish()
-
 
     def predict(self, board, curPlayer):
         """

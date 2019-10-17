@@ -13,17 +13,17 @@ args = dotdict({
     'multiCPU': True,
     'numIters': 30,
     'numEps': 100,
-    'tempThreshold': 15,
+    'tempThreshold': 7,
     'updateThreshold': 0.51,
     'maxlenOfQueue': 80000,
-    'numMCTSSims': 50,
-    'cpuct': 2.0,
+    'numMCTSSims': 150,
+    'cpuct': 1.0,
     'multiGPU': True,
     'setGPU': '1,2',
     # The total number of games when self-playing is:
     # Total = numSelfPlayProcess * numPerProcessSelfPlay
-    'numSelfPlayProcess': 4,
-    'numPerProcessSelfPlay': 50,
+    'numSelfPlayProcess': 6,
+    'numPerProcessSelfPlay': 20,
     # The total number of games when against-playing is:
     # Total = numAgainstPlayProcess * numPerProcessAgainst
     'numAgainstPlayProcess': 6,
@@ -31,6 +31,7 @@ args = dotdict({
     'checkpoint': './temp/',
     'numItersForTrainExamplesHistory': 20,
     'lambdaHeur':0.0,
+    'coeff':0.6,
 })
 
 if __name__=="__main__":

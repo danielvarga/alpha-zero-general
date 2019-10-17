@@ -20,7 +20,7 @@ any agent.
 
 def myheatmap(data, xlabels, ylabels):
   fig, ax = plt.subplots()
-  im = plt.imshow(data, cmap='RdYlGn')
+  im = plt.imshow(data.transpose(), cmap='RdYlGn')
   cbar = ax.figure.colorbar(im, ax=ax)
   ax.set_xticks(np.arange(data.shape[0]))
   ax.set_yticks(np.arange(data.shape[1]))
@@ -34,7 +34,7 @@ def myheatmap(data, xlabels, ylabels):
                 verticalalignment="center")
   for i in range(data.shape[0]):
     for j in range(data.shape[1]):
-      text = im.axes.text(j, i, valfmt(100*data[i][j]), **kw)
+      text = im.axes.text(i, j, valfmt(100*data[i][j]), **kw)
 
   plt.title("Heatmap")
   fig.savefig("heatmap.png")
@@ -152,30 +152,46 @@ if __name__=="__main__":
     n1 = NNet(g)
     n1.load_checkpoint('./temp/','best.pth.tar')
 
-    args1 = dotdict({'numMCTSSims': 50, 'cpuct':1.0, 'multiGPU':True})
-    mcts1 = MCTS(g, n1, args1)
+    args1 = dotdict({'numMCTSSims': 50, 'cpuct':0.1, 'multiGPU':True})
+    mcts1 = MCTS(g, n1, args1, lambdaHeur=0.1)
     n1p = lambda b, p: np.argmax(mcts1.getActionProb(b, p, temp=0))
 
     # improved nnet player
     n2 = NNet(g)
     n2.load_checkpoint('./temp/','best.pth.tar')
-    args2 = dotdict({'numMCTSSims': 50, 'cpuct':1.00, 'multiGPU':True})
-    mcts2 = MCTS(g, n2, args2, lambdaHeur=0.6)
+    args2 = dotdict({'numMCTSSims':1000, 'cpuct':0.1, 'multiGPU':True})
+    mcts2 = MCTS(g, n2, args2, lambdaHeur=1.0)
     n2p =  lambda b, p: np.argmax(mcts2.getActionProb(b, p, temp=0))
 
-    random.seed(1)
+    # Heur+MCTS
+    all1 = {}
+    for i in [30,40,50]:
+      args0 = dotdict({'numMCTSSims':i , 'cpuct':1.0, 'multiGPU':True})
+      mcts0 = MCTS(g, n2, args0, lambdaHeur=1.0)
+      player = lambda b, p: np.argmax(mcts0.getActionProb(b, p, temp=0))
+      all1["Heur-Sim{}".format(i)]=player
+
+    # Heur+MCTS
+    all2 = {}
+    for i in [0.1, 0.5, 1.0, 2.0]:
+      args0 = dotdict({'numMCTSSims':50 , 'cpuct':i, 'multiGPU':True})
+      mcts0 = MCTS(g, n2, args0, lambdaHeur=1.0)
+      player = lambda b, p: np.argmax(mcts0.getActionProb(b, p, temp=0))
+      all2["Heur-Cpuct{}".format(i)]=player
+      
     all = {
         'Random': rp,
         'Best NN': n1p,
         'Heuristic': heuristic,
         '$\lambda$-Heur-{}'.format(args.lambdaHeur):n2p,
     }
+    
     if modeargs.mode == 'human':
-        arena = Arena.Arena(n2p, hp, g, display=display)
+        arena = Arena.Arena(n1p, hp, g, display=display)
         print(arena.playGames(2, verbose=True))
     elif modeargs.mode == 'one2one':
-        arena = Arena.Arena(n2p, heuristic,  g, display=display)
-        print(arena.playGames(40, verbose=True))
+        arena = Arena.Arena(n1p, heuristic,  g, display=display)
+        print(arena.playGames(20, verbose=True))
     elif modeargs.mode == 'one2all':
         results = []
         y = []
@@ -190,10 +206,10 @@ if __name__=="__main__":
     elif modeargs.mode == 'tournament':
         #results = [[""]+[name for name,p in all.items()]]
         results= []
-        for name1,player1 in all.items():
+        for name1,player1 in all1.items():
             #row = [name1]
             row = []
-            for name2,player2 in all.items():
+            for name2,player2 in all2.items():
                 arena = Arena.Arena(player1, player2, g, display=display)
                 firstWin, secondWin, draw = arena.playGames(20, verbose=False)
                 rate = (firstWin)/ (firstWin+secondWin)
@@ -204,7 +220,8 @@ if __name__=="__main__":
         #    for item in row:
         #        print("{:>15}".format(item), end = '')
         #    print('')
-        labels = [name for name,p in all.items()]
-        myheatmap(np.array(results), labels, labels)
+        labels1 = [name for name,p in all1.items()]
+        labels2 = [name for name,p in all2.items()]
+        myheatmap(np.array(results), labels1, labels2)
     else:
         print('Mode not found: {}'.format(modeargs.mode))
