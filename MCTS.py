@@ -24,7 +24,7 @@ class MCTS():
         self.heuristic = Heuristic(game)
         self.lambdaHeur = lambdaHeur
 
-    def getActionProb(self, canonicalBoard, curPlayer, temp=1):
+    def getActionProb(self, canonicalBoard, curPlayer, temp=1, debug=False):
         """
         This function performs numMCTSSims simulations of MCTS starting from
         canonicalBoard.
@@ -47,11 +47,17 @@ class MCTS():
             bestA = np.argmax(counts)
             probs = [0]*len(counts)
             probs[bestA]=1
-            return probs
+            if debug:
+                return probs, counts
+            else:
+                return probs
 
         counts = [x**(1./temp) for x in counts]
         probs = [x/float(sum(counts)) for x in counts]
-        return probs
+        if debug:
+            return probs, counts
+        else:
+            return probs
 
     def search(self, canonicalBoard, curPlayer):
         """
@@ -95,8 +101,8 @@ class MCTS():
                 probs = (1.0-self.lambdaHeur)*probs + self.lambdaHeur*np.resize(mtx,(np.prod(mtx.shape)))
                 #probs = np.resize(mtx,(np.prod(mtx.shape)))
                 #v = (1.0-self.lambdaHeur)*v+self.lambdaHeur*v0    
-            v = -curPlayer / (self.heuristic.line_sum(canonicalBoard)+ 1.0)
-            probs+=np.random.dirichlet([0.3]*len(probs))
+                #v = -curPlayer / (self.heuristic.line_sum(canonicalBoard)+ 1.0)
+            #probs+=np.random.dirichlet([0.3]*len(probs))
             
             valids = self.game.getValidMoves(canonicalBoard, curPlayer)
             self.Ps[s] = probs*valids      # masking invalid moves

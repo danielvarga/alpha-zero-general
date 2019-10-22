@@ -187,7 +187,7 @@ if __name__=="__main__":
     }
     
     if modeargs.mode == 'human':
-        arena = Arena.Arena(n1p, hp, g, display=display)
+        arena = Arena.Arena(heuristic, hp, g, display=display)
         print(arena.playGames(2, verbose=True))
     elif modeargs.mode == 'one2one':
         arena = Arena.Arena(n1p, heuristic,  g, display=display)

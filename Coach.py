@@ -60,13 +60,13 @@ def AsyncSelfPlay(game,args,iter_num,bar):
             episodeStep += 1
             temp = int(episodeStep < args.tempThreshold)
 
-            pi = mcts.getActionProb(board, curPlayer=curPlayer, temp=temp)
+            pi, counts = mcts.getActionProb(board, curPlayer=curPlayer, temp=temp,debug=True)
             action = np.random.choice(len(pi), p=pi)
             mtx = mcts.heuristic.get_field_stregth_mtx(board, 1)
             mtx = np.append(mtx, [0.0])
-            #pi= np.resize(mtx,(np.prod(mtx.shape)))
+            #pi= np.resize(mtx,(np.prod(mtx.shape)))**2
             #pi/=float(sum(pi))
-            trainExamples.append([board, curPlayer, pi, None])
+            trainExamples.append([board, curPlayer, pi, action])
             #print("www\n",board.transpose(), curPlayer,"\n")
             #print(np.resize(pi[:-1],(8,4) ).transpose())
 
@@ -74,17 +74,17 @@ def AsyncSelfPlay(game,args,iter_num,bar):
             board, curPlayer = game.getNextState(board, curPlayer, action)
 
             r = game.getGameEnded(board, curPlayer)
-
             if r!=0: # game is over
                 reward0 = r
                 mylist = []
                 if False :
                     print("\n",r, curPlayer, "\n")
                     display(board, end = True)
+                    np.set_printoptions(precision=5)
+                    print(np.resize(pi[:-1],(8,4) ).transpose())
                     print("")
 
-                for i,x in enumerate(reversed(trainExamples)):
-                    #reward0 = -curPlayer / (mcts.heuristic.line_sum(board)+ 1.0)
+                for i,x in enumerate(reversed(trainExamples[:])):
                     reward = (args.coeff**(i//2))*reward0*((-1)**(x[1]!=curPlayer))
                     mylist.append((x[0], x[1], x[2], reward))
                 templist.append(list(mylist))
@@ -139,9 +139,17 @@ def AsyncTrainNetwork(game,args,trainhistory):
     nnet.train(trainExamples)
     nnet.save_checkpoint(folder=args.checkpoint, filename='train.pth.tar')
 
-    probs, v =  nnet.predict(np.zeros((8,4)), 1)
+    #print(trainExamples[0][0].transpose(), trainExamples[0][2])
+    print(len(trainExamples))
+    myboard = np.zeros((8,4))
+    myboard[0][1]=1
+    myboard[1][1]=-1
+    probs, v =  nnet.predict(myboard, 1)
     probs = np.resize(probs[:-1], (8,4)).transpose()
-    print(probs)
+    probs2, v2 =  nnet.predict(myboard, -1)
+    probs2 = np.resize(probs2[:-1], (8,4)).transpose()
+    print(probs, v)
+    print(probs2, v2)
     heur = Heuristic(game)
     mtx = heur.get_field_stregth_mtx(np.zeros((8,4)), 1).transpose()
     print(mtx/np.sum(mtx))

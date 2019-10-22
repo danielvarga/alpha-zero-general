@@ -14,7 +14,7 @@ import tensorflow as tf
 from .GobangNNet import GobangNNet as onnet
 
 args = dotdict({
-    'lr': 0.005,
+    'lr': 0.001,
     'dropout': 0.0,
     'epochs': 10,
     'batch_size': 32,
@@ -107,7 +107,10 @@ class NNetWrapper(NeuralNet):
         curPlayer = np.array([[curPlayer]])
 
         # run
-        prob, v = self.sess.run([self.nnet.prob, self.nnet.v], feed_dict={self.nnet.input_boards: board, self.nnet.curPlayer:curPlayer, self.nnet.dropout: 0.0, self.nnet.isTraining: False})
+        prob, v = self.sess.run([self.nnet.prob, self.nnet.v],
+                                feed_dict={self.nnet.input_boards: board,
+                                           self.nnet.curPlayer:curPlayer,
+                                           self.nnet.dropout: 0.0, self.nnet.isTraining: False})
 
         #print('PREDICTION TIME TAKEN : {0:03f}'.format(time.time()-start))
         return prob[0], v[0]
