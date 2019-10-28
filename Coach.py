@@ -10,8 +10,23 @@ import multiprocessing
 from gobang.tensorflow.NNet import NNetWrapper as nn
 from gobang.GobangGame import display
 from gobang.GobangPlayers import *
-import logging
+import logging as log
 from utils import *
+
+# python logging doenst work with tf-1.14
+class MyLogger:
+    filename = "capabilities.log"
+        
+    def log(msg):
+        with open(MyLogger.filename, "a") as myfile:
+            myfile.write(msg+"\n")
+    def info(msg):
+        MyLogger.log("INFO:"+msg)
+    def warning(msg):
+        MyLogger.log("WARNING:"+msg)
+    def error(msg):
+        MyLogger.log("ERROR:"+msg)
+        
 
 def AsyncSelfPlay(game,args,iter_num,bar):
     #set gpu
@@ -233,7 +248,7 @@ def logCurrentCapabilities(game, iter_num, args):
     resultHeur = "{} {}".format(*arena.playGames(40, verbose=False)[:2])
     arena = Arena(n2p, rp,  game, display=display)
     resultRand = "{} {}".format(*arena.playGames(40, verbose=False)[:2])
-    logging.info("Iter:{} Heuristic: {} Random: {}".format(iter_num, resultHeur, resultRand))
+    MyLogger.info("Iter:{} Heuristic: {} Random: {}".format(iter_num, resultHeur, resultRand))
     print("Iter:{} Heuristic: {} Random: {}\n".format(iter_num, resultHeur, resultRand))
     
 class Coach():
@@ -321,8 +336,8 @@ class Coach():
         It then pits the new neural network against the old one and accepts it
         only if it wins >= updateThreshold fraction of games.
         """
-        logging.basicConfig(filename='capabilities.log',level=logging.DEBUG)
-        logging.info("============== New Run ==============")
+        print("www")
+        MyLogger.info("============== New Run ==============")
         for i in range(1, self.args.numIters+1):
             print('------ITER ' + str(i) + '------')
             iterationTrainExamples = deque([], maxlen=self.args.maxlenOfQueue)
