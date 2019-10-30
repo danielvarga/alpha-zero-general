@@ -16,13 +16,13 @@ args = dotdict({
     'tempThreshold': 32,
     'updateThreshold': 0.51,
     'maxlenOfQueue': 80000,
-    'numMCTSSims': 200,
-    'cpuct': 5.0,
+    'numMCTSSims': 500,
+    'cpuct': 4.0,
     'multiGPU': True,
     'setGPU': '1,2',
     # The total number of games when self-playing is:
     # Total = numSelfPlayProcess * numPerProcessSelfPlay
-    'numSelfPlayProcess': 6,
+    'numSelfPlayProcess': 8,
     'numPerProcessSelfPlay': 100,
     # The total number of games when against-playing is:
     # Total = numAgainstPlayProcess * numPerProcessAgainst
@@ -31,12 +31,17 @@ args = dotdict({
     'checkpoint': './temp/',
     'numItersForTrainExamplesHistory': 20,
     'lambdaHeur':0.0,
-    'coeff':1.0,
+    'coeff':0.9,
 })
 
 if __name__=="__main__":
     import tensorflow as tf
-    # tf.logging.info('TensorFlow')
+    #tf.logging.info('TensorFlow')
+    import logging
+    log = logging.getLogger('tensorflow')
+    fh = logging.FileHandler('tensorflow.log')
+    fh.setLevel(logging.DEBUG)
+    log.addHandler(fh)
     tf.logging.set_verbosity(tf.logging.ERROR)
     # tf.logging.info('TensorFlow')
     # os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3' 

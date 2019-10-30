@@ -102,7 +102,7 @@ class MCTS():
                 #probs = np.resize(mtx,(np.prod(mtx.shape)))
                 #v = (1.0-self.lambdaHeur)*v+self.lambdaHeur*v0    
                 #v = -curPlayer / (self.heuristic.line_sum(canonicalBoard)+ 1.0)
-            #probs+=np.random.dirichlet([0.3]*len(probs))
+            #probs+=0.25*np.random.dirichlet([0.3]*len(probs))
             
             valids = self.game.getValidMoves(canonicalBoard, curPlayer)
             self.Ps[s] = probs*valids      # masking invalid moves

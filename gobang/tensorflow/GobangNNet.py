@@ -109,7 +109,7 @@ class GobangNNet():
         #self.loss_pi =  tf.losses.softmax_cross_entropy(self.target_pis, self.pi)
         self.loss_pi =  tf.losses.mean_squared_error(self.target_pis, self.prob)
         self.loss_v = tf.losses.mean_squared_error(self.target_vs, tf.reshape(self.v, shape=[-1,]))
-        self.total_loss = 100.0 *self.loss_pi + self.loss_v
+        self.total_loss = 80.0 *self.loss_pi + self.loss_v
         update_ops = tf.get_collection(tf.GraphKeys.UPDATE_OPS)
         with tf.control_dependencies(update_ops):
             self.train_step = tf.train.AdamOptimizer(self.args.lr).minimize(self.total_loss)

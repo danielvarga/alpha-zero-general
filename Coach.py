@@ -336,7 +336,6 @@ class Coach():
         It then pits the new neural network against the old one and accepts it
         only if it wins >= updateThreshold fraction of games.
         """
-        print("www")
         MyLogger.info("============== New Run ==============")
         for i in range(1, self.args.numIters+1):
             print('------ITER ' + str(i) + '------')
