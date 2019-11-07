@@ -36,7 +36,19 @@ class Heuristic():
             probs = np.array(mtx).flatten()
             a = np.random.choice(range(len(probs)), p = probs)
             return a
-        
+
+    def has_lost(self, board, player, action):
+        x = action//self.N
+        y = action % self.N
+
+        for line in self.pointStrengthHeuristics[(x,y)]:
+            is_full = True
+            for x0,y0 in line:
+                if(board[x0][y0]!=-player):
+                    is_full = False
+            if(is_full):
+                return True
+        return False
     def line_sum(self, board):
         sum = 0.0
         for line in self.Lines:
@@ -59,7 +71,28 @@ class Heuristic():
                     return x,y
         print("Board is full!!!")
         exit()
-        
+
+    def get_x_line_mtx(self, board, player, x=1, verbose=False):
+        mtx = np.zeros(shape = (self.M, self.N))
+        for key, lines in self.pointStrengthHeuristics.items():
+            x,y = key
+            if(board[x][y]!=0):
+                continue
+
+            for line in lines:
+                enemyless = True
+                emptynum = 0
+                for (x1,y1) in line:
+                    if(board[x1][y1]==-player):
+                        enemyless = False
+                        break
+                    elif(board[x1][y1] == 0):
+                        emptynum +=1
+                if(enemyless and emptynum == x):
+                    mtx[x][y] = 1
+                    break
+
+        return mtx
     def get_field_stregth_mtx(self, board, player, verbose=False):
         mtx = np.zeros(shape = (self.M, self.N))
         for key, lines in self.pointStrengthHeuristics.items():

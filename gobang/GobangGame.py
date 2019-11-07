@@ -3,6 +3,7 @@ import sys
 sys.path.append('..')
 from Game import Game
 from .GobangLogic import Board
+from .GobangPlayers import Heuristic
 import numpy as np
 import math
 
@@ -14,6 +15,7 @@ class GobangGame(Game):
         self.row = row
         self.n_in_row = nir
         self.defender = defender
+        self.heuristic = Heuristic(self)
 
     def getInitBoard(self):
         # return initial board (numpy board)
@@ -66,13 +68,16 @@ class GobangGame(Game):
     def getReward(self, board, winner):
         return winner + winner*self.emptyFields(board)/20.0
         
-    def getGameEnded(self, board, player):
+    def getGameEnded(self, board, player, action):
         """
         Return the Reward for the current board:
         empty_field  : if GAME OVER
         0             : if game is not over
         """
-        if self.has_lost(board, -1):
+        if(action < 0):
+            return 0
+        
+        if self.heuristic.has_lost(board, -1, action):
            return player
         elif(np.min(np.absolute(board))==1):
            return -player
@@ -85,7 +90,7 @@ class GobangGame(Game):
         # else:
         #     return 0
 
-    # modified
+    # modified    
     def has_lost(self, board, player):
         # return True, if player lost, else False
         b = Board(self.col, self.row)
