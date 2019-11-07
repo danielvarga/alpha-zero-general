@@ -21,14 +21,14 @@ class GobangNNet():
         # Neural Net
         self.graph = tf.Graph()
         with self.graph.as_default():
-            self.input_boards = tf.placeholder(tf.float32, shape=[None, self.board_x, self.board_y])
+            channel_num = 2
+            self.input_boards = tf.placeholder(tf.float32, shape=[None, self.board_x, self.board_y, channel_num])
             # s: batch_size x board_x x board_y
 
             self.curPlayer = tf.placeholder(tf.float32, shape=[None,1])
             self.dropout = tf.placeholder(tf.float32)
             self.isTraining = tf.placeholder(tf.bool, name="is_training")
-
-            x_image = tf.reshape(self.input_boards, [-1, self.board_x, self.board_y, 1])
+            x_image = tf.reshape(self.input_boards, [-1, self.board_x, self.board_y, channel_num])
             # batch_size  x board_x x board_y x 1
 
             white_image = x_image * (x_image + 1) -1
@@ -65,7 +65,7 @@ class GobangNNet():
                 h_conv4_flat = tf.reshape(h_conv4, [-1, args.num_channels*(self.board_x//4)*(self.board_y//2)])
 
             # alternative information channel
-            x_flat = tf.reshape(self.input_boards, [-1, self.board_x * self.board_y])
+            x_flat = tf.reshape(self.input_boards, [-1, self.board_x * self.board_y*channel_num])
             x_flat = tf.concat([x_flat, self.curPlayer], axis=1)
             if(batchNorm):
                 h_fc1 = Dropout(rate=self.dropout)(

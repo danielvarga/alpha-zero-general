@@ -54,11 +54,13 @@ class NNetWrapper(NeuralNet):
                 sample_ids = np.random.randint(len(examples), size=args.batch_size)
                 boards, players, pis, vs = list(zip(*[examples[i] for i in sample_ids]))
                 players = np.expand_dims(players, 1)
+                #heuristic_boards = mcts.heuristic.get_field_stregth_mtx(board, 1)
 
                 # predict and compute gradient and do SGD step
                 input_dict = {self.nnet.input_boards: boards, self.nnet.target_pis: pis,
                               self.nnet.target_vs: vs, self.nnet.curPlayer: players,
-                              self.nnet.dropout: args.dropout, self.nnet.isTraining: True}
+                              self.nnet.dropout: args.dropout, self.nnet.isTraining: True,
+                }
 
                 # measure data loading time
                 data_time.update(time.time() - end)
