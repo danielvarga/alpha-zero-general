@@ -36,7 +36,7 @@ class MCTS():
         self.endNum = 0
         self.win = 0
         for i in range(self.args.numMCTSSims):
-            self.search(canonicalBoard, curPlayer)
+            self.search(canonicalBoard, curPlayer, -1)
 
         #print(self.endNum, self.win, self.args.numMCTSSims)
         s = self.game.stringRepresentation(canonicalBoard)
@@ -59,7 +59,7 @@ class MCTS():
         else:
             return probs
 
-    def search(self, canonicalBoard, curPlayer):
+    def search(self, canonicalBoard, curPlayer, action):
         """
         This function performs one iteration of MCTS. It is recursively called
         till a leaf node is found. The action chosen at each node is one that
@@ -82,7 +82,7 @@ class MCTS():
         s = self.game.stringRepresentation(canonicalBoard)
         #display(canonicalBoard, end = True)
         if s not in self.Es:
-            self.Es[s] = self.game.getGameEnded(canonicalBoard, curPlayer)
+            self.Es[s] = self.game.getGameEnded(canonicalBoard, curPlayer, action)
         if self.Es[s]!=0:
             self.endNum+=1
             self.win += (curPlayer == 1)
@@ -91,7 +91,9 @@ class MCTS():
 
         if s not in self.Ps:
             # leaf node
-            probs, v = self.nnet.predict(canonicalBoard, curPlayer)
+            mtx = self.heuristic.get_field_stregth_mtx(canonicalBoard, 1)
+            probs, v = self.nnet.predict(np.stack([canonicalBoard,mtx], axis=2), curPlayer)
+            #probs, v = self.nnet.predict(canonicalBoard, curPlayer)
             mtx = []
             if self.lambdaHeur > 0.0:
                 mtx = self.heuristic.get_field_stregth_mtx(canonicalBoard, 1)
@@ -149,7 +151,7 @@ class MCTS():
         a = best_act
         next_s, next_player = self.game.getNextState(canonicalBoard, curPlayer, a)
 
-        v = self.search(next_s, next_player)
+        v = self.search(next_s, next_player, a)
         #Heuristic: v = self.Ps[s][a], cpuct = 0.0, u = self.Ps[s][a]
 
         if (s,a) in self.Qsa:

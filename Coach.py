@@ -78,17 +78,17 @@ def AsyncSelfPlay(game,args,iter_num,bar):
             pi, counts = mcts.getActionProb(board, curPlayer=curPlayer, temp=temp,debug=True)
             action = np.random.choice(len(pi), p=pi)
             mtx = mcts.heuristic.get_field_stregth_mtx(board, 1)
-            mtx = np.append(mtx, [0.0])
+            #mtx = np.append(mtx, [0.0])
             #pi= np.resize(mtx,(np.prod(mtx.shape)))**2
             #pi/=float(sum(pi))
-            trainExamples.append([board, curPlayer, pi, action])
+            trainExamples.append([np.stack([board,mtx], axis=2), curPlayer, pi, action])
             #print("www\n",board.transpose(), curPlayer,"\n")
             #print(np.resize(pi[:-1],(8,4) ).transpose())
 
             #action = np.random.choice(len(pi), p=pi)
             board, curPlayer = game.getNextState(board, curPlayer, action)
 
-            r = game.getGameEnded(board, curPlayer)
+            r = game.getGameEnded(board, curPlayer, action)
             if r!=0: # game is over
                 reward0 = r
                 mylist = []
@@ -159,15 +159,15 @@ def AsyncTrainNetwork(game,args,trainhistory):
     myboard = np.zeros((8,4))
     myboard[0][1]=1
     myboard[1][1]=-1
-    probs, v =  nnet.predict(myboard, 1)
-    probs = np.resize(probs[:-1], (8,4)).transpose()
-    probs2, v2 =  nnet.predict(myboard, -1)
-    probs2 = np.resize(probs2[:-1], (8,4)).transpose()
-    print(probs, v)
-    print(probs2, v2)
-    heur = Heuristic(game)
-    mtx = heur.get_field_stregth_mtx(np.zeros((8,4)), 1).transpose()
-    print(mtx/np.sum(mtx))
+    #probs, v =  nnet.predict(myboard, 1)
+    #probs = np.resize(probs[:-1], (8,4)).transpose()
+    #probs2, v2 =  nnet.predict(myboard, -1)
+    #probs2 = np.resize(probs2[:-1], (8,4)).transpose()
+    #print(probs, v)
+    #print(probs2, v2)
+    #heur = Heuristic(game)
+    #mtx = heur.get_field_stregth_mtx(np.zeros((8,4)), 1).transpose()
+    #print(mtx/np.sum(mtx))
 
 def AsyncAgainst(game,args,iter_num,bar):
     # create separate seeds for each worker
@@ -229,7 +229,23 @@ def CheckResultAndSaveNetwork(pwins,nwins,draws,game,args,iter_num):
         net.save_checkpoint(folder=args.checkpoint, filename='best.pth.tar')
         net.save_checkpoint(folder=args.checkpoint, filename='checkpoint_' + str(iter_num) + '.pth.tar')
         logCurrentCapabilities(game, iter_num, args)
-        
+
+def play_games(arena, numProcess):
+    return arena.playGames(numProcess, verbose=False)
+    
+def run_arena_paralell(arena, args):
+    pool = multiprocessing.Pool(processes=args.numAgainstPlayProcess)
+    res = []
+    for i in range(args.numAgainstPlayProcess):
+        res.append(pool.apply_async(play_games,
+                                    args=[arena, args.numPerProcessAgainst]))
+    pool.close()
+    pool.join()
+
+    res2 = [r.get() for r in res]
+    print(res2)
+    return np.sum(res2, axis=0)[:2]
+    
 def logCurrentCapabilities(game, iter_num, args):
     # improved nnet player
     n2 = nn(game)
@@ -246,8 +262,12 @@ def logCurrentCapabilities(game, iter_num, args):
 
     arena = Arena(n2p, heuristic,  game, display=display)
     resultHeur = "{} {}".format(*arena.playGames(40, verbose=False)[:2])
+    #resultHeur = "{} {}".format(*run_arena_paralell(arena, args))
+    
     arena = Arena(n2p, rp,  game, display=display)
     resultRand = "{} {}".format(*arena.playGames(40, verbose=False)[:2])
+    #resultHeur = "{} {}".format(*run_arena_paralell(arena, args))
+    
     MyLogger.info("Iter:{} Heuristic: {} Random: {}".format(iter_num, resultHeur, resultRand))
     print("Iter:{} Heuristic: {} Random: {}\n".format(iter_num, resultHeur, resultRand))
     
@@ -347,5 +367,5 @@ class Coach():
             self.trainExamplesHistory.clear()
             self.parallel_self_test_play(i)
             # Reduce influence of lambdaHeur
-            self.args.lambdaHeur*=0.95
+            #self.args.lambdaHeur*=0.95
             self.args.cpuct*=0.95
