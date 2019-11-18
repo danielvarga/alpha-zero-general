@@ -70,6 +70,7 @@ def AsyncSelfPlay(game,args,iter_num,bar):
         curPlayer = 1
         episodeStep = 0
 
+        boardSize = np.product(np.shape(board))
         while True:
             templist = []
             episodeStep += 1
@@ -90,13 +91,14 @@ def AsyncSelfPlay(game,args,iter_num,bar):
 
             r = game.getGameEnded(board, curPlayer, action)
             if r!=0: # game is over
-                reward0 = r
+                reward0 = r*(float(boardSize-episodeStep+1)/16.0)
+                #reward0=r*(1/episodeStep)
                 mylist = []
                 if False :
                     print("\n",r, curPlayer, "\n")
                     display(board, end = True)
                     np.set_printoptions(precision=5)
-                    print(np.resize(pi[:-1],(8,4) ).transpose())
+                    print(np.resize(pi[:-1],np.shape(board) ).transpose())
                     print("")
 
                 for i,x in enumerate(reversed(trainExamples[:])):
@@ -220,15 +222,18 @@ def CheckResultAndSaveNetwork(pwins,nwins,draws,game,args,iter_num):
     #set gpu
     os.environ["CUDA_VISIBLE_DEVICES"] = args.setGPU
 
-    if pwins+nwins > 0 and float(nwins+(0.5*draws))/(pwins+nwins+draws) < args.updateThreshold:
-        print('REJECTING NEW MODEL')
-    else:
+
+    if float(nwins)/(pwins+nwins) > args.updateThreshold or (
+            nwins==pwins and draws > args.updateThreshold):
         print('ACCEPTING NEW MODEL')
         net = nn(game, args.displaybar)
         net.load_checkpoint(folder=args.checkpoint, filename='train.pth.tar')
         net.save_checkpoint(folder=args.checkpoint, filename='best.pth.tar')
         net.save_checkpoint(folder=args.checkpoint, filename='checkpoint_' + str(iter_num) + '.pth.tar')
         logCurrentCapabilities(game, iter_num, args)
+    else:
+        print('REJECTING NEW MODEL')
+        print(draws)
 
 def play_games(arena, numProcess):
     return arena.playGames(numProcess, verbose=False)
@@ -331,12 +336,13 @@ class Coach():
 
         pwins = 0
         nwins = 0
-        draws = 0
+        draws = 0.0
         for i in result:
             pwins += i[0]
             nwins += i[1]
             draws += i[2]
 
+        draws /= len(result)
         print("pwin: "+str(pwins))
         print("nwin: "+str(nwins))
         print("draw: "+str(draws))

@@ -57,7 +57,7 @@ class Arena():
             assert(self.display)
             print("Game over: Turn ", str(it), "Result ", str(self.game.getGameEnded(board, 1, action)))
             self.display(board, end = True)
-        return self.game.getGameEnded(board, 1, action)
+        return self.game.getGameEnded(board, 1, action), it
 
     def playGames(self, num, verbose=False):
         """
@@ -79,8 +79,11 @@ class Arena():
         oneWon = 0
         twoWon = 0
         draws = 0
+        oneStepNum = 0.0
+        twoStepNum = 0.0
         for _ in range(num):
-            gameResult = self.playGame(verbose=verbose)
+            gameResult, stepnum = self.playGame(verbose=verbose)
+            oneStepNum+=stepnum
             if gameResult==1:
                 oneWon+=1
             elif gameResult==-1:
@@ -99,7 +102,8 @@ class Arena():
         self.player1, self.player2 = self.player2, self.player1
         
         for _ in range(num):
-            gameResult = self.playGame(verbose=verbose)
+            gameResult, stepnum = self.playGame(verbose=verbose)
+            twoStepNum+=stepnum
             if gameResult==-1:
                 oneWon+=1                
             elif gameResult==1:
@@ -116,5 +120,5 @@ class Arena():
                 bar.next()
             
         bar.finish()
-
-        return oneWon, twoWon, draws
+        print(twoStepNum/(twoStepNum+oneStepNum))
+        return oneWon, twoWon, twoStepNum/(twoStepNum+oneStepNum)

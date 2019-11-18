@@ -11,3 +11,5 @@ checkpoints/
 # For PyCharm users
 .idea/
 
+capabilities.log
+temp2

@@ -152,7 +152,7 @@ if __name__=="__main__":
     n1 = NNet(g)
     n1.load_checkpoint('./temp/','best.pth.tar')
 
-    args1 = dotdict({'numMCTSSims': 50, 'cpuct':0.1, 'multiGPU':True})
+    args1 = dotdict({'numMCTSSims': 40, 'cpuct':0.3, 'multiGPU':True})
     mcts1 = MCTS(g, n1, args1, lambdaHeur=0.1)
     n1p = lambda b, p: np.argmax(mcts1.getActionProb(b, p, temp=0))
 
@@ -190,7 +190,7 @@ if __name__=="__main__":
         arena = Arena.Arena(n1p, hp, g, display=display)
         print(arena.playGames(4, verbose=True))
     elif modeargs.mode == 'one2one':
-        arena = Arena.Arena(n1p, heuristic,  g, display=display)
+        arena = Arena.Arena(heuristic, n1p,  g, display=display)
         print(arena.playGames(20, verbose=True))
     elif modeargs.mode == 'one2all':
         results = []

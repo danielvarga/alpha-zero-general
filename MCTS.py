@@ -112,7 +112,7 @@ class MCTS():
             if sum_Ps_s > 0:
                 self.Ps[s] /= sum_Ps_s    # renormalize
             else:
-                probs2, v2 = self.nnet.predict(canonicalBoard, -curPlayer)
+                #probs2, v2 = self.nnet.predict(canonicalBoard, -curPlayer)
                 display(canonicalBoard, end = True)
                 print("probs: ", probs)
                 print("mtx: ", mtx)
