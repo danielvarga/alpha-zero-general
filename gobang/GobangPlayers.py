@@ -1,3 +1,4 @@
+
 import numpy as np
 
 
@@ -61,7 +62,7 @@ class Heuristic():
                 elif(board[x][y]==0):
                     emptyNum += 1
             if(enemyLess):
-                sum += 2.0**(-emptyNum)
+                sum += 2.7**(-emptyNum)
         return sum
              
     def greedy(self, board):
@@ -72,8 +73,8 @@ class Heuristic():
         print("Board is full!!!")
         exit()
 
-    def get_x_line_mtx(self, board, player, x=1, verbose=False):
-        mtx = np.zeros(shape = (self.M, self.N))
+    def get_x_line_mtx(self, board, player):
+        mtx = np.zeros(shape = (self.M, self.N, 7))
         for key, lines in self.pointStrengthHeuristics.items():
             x,y = key
             if(board[x][y]!=0):
@@ -83,16 +84,15 @@ class Heuristic():
                 enemyless = True
                 emptynum = 0
                 for (x1,y1) in line:
-                    if(board[x1][y1]==-player):
+                    if(board[x1][y1]==-1):
                         enemyless = False
                         break
                     elif(board[x1][y1] == 0):
                         emptynum +=1
-                if(enemyless and emptynum == x):
-                    mtx[x][y] = 1
-                    break
-
+                if(enemyless):
+                    mtx[x][y][emptynum-1] += 1
         return mtx
+    
     def get_field_stregth_mtx(self, board, player, verbose=False):
         mtx = np.zeros(shape = (self.M, self.N))
         for key, lines in self.pointStrengthHeuristics.items():
@@ -235,3 +235,22 @@ class GreedyGobangPlayer():
             candidates += [(-score, a)]
         candidates.sort()
         return candidates[0][1]
+
+from gobang.tensorflow.NNet import NNetWrapper as NNet
+class PolicyPlayer():
+    def __init__(self, game):
+        self.game = game
+        self.heuristic = Heuristic(game)
+        
+        self.nnet = NNet(game)
+        self.nnet.load_checkpoint('./temp/','best.pth.tar')
+        
+    def play(self, board, curPlayer):
+        mtx = self.heuristic.get_field_stregth_mtx(board, 1)
+        heuristic_components = self.heuristic.get_x_line_mtx(board, 1)
+        shape = list(np.shape(board))+[1]
+        probs, v = self.nnet.predict(np.concatenate([np.reshape(board,shape),
+                                                     np.reshape(mtx, shape),
+                                                     heuristic_components], axis=2),curPlayer)
+        valids = self.game.getValidMoves(board, curPlayer)
+        return np.argmax(probs*valids)

@@ -92,7 +92,11 @@ class MCTS():
         if s not in self.Ps:
             # leaf node
             mtx = self.heuristic.get_field_stregth_mtx(canonicalBoard, 1)
-            probs, v = self.nnet.predict(np.stack([canonicalBoard,mtx], axis=2), curPlayer)
+            heuristic_components = self.heuristic.get_x_line_mtx(canonicalBoard, 1)
+            shape = list(np.shape(canonicalBoard))+[1]
+            probs, v = self.nnet.predict(np.concatenate([np.reshape(canonicalBoard,shape),
+                                                   np.reshape(mtx, shape),
+                                                   heuristic_components], axis=2),curPlayer)
             #probs, v = self.nnet.predict(canonicalBoard, curPlayer)
             mtx = []
             if self.lambdaHeur > 0.0:

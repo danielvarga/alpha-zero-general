@@ -79,10 +79,15 @@ def AsyncSelfPlay(game,args,iter_num,bar):
             pi, counts = mcts.getActionProb(board, curPlayer=curPlayer, temp=temp,debug=True)
             action = np.random.choice(len(pi), p=pi)
             mtx = mcts.heuristic.get_field_stregth_mtx(board, 1)
+            heuristic_components = mcts.heuristic.get_x_line_mtx(board, 1)
+            shape = list(np.shape(board))+[1]
             #mtx = np.append(mtx, [0.0])
             #pi= np.resize(mtx,(np.prod(mtx.shape)))**2
             #pi/=float(sum(pi))
-            trainExamples.append([np.stack([board,mtx], axis=2), curPlayer, pi, action])
+            trainExamples.append([np.concatenate([np.reshape(board,shape),
+                                                   np.reshape(mtx, shape),
+                                                   heuristic_components], axis=2),
+                                  curPlayer, pi, action])
             #print("www\n",board.transpose(), curPlayer,"\n")
             #print(np.resize(pi[:-1],(8,4) ).transpose())
 
