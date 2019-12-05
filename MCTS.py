@@ -94,20 +94,11 @@ class MCTS():
             mtx = self.heuristic.get_field_stregth_mtx(canonicalBoard, 1)
             heuristic_components = self.heuristic.get_x_line_mtx(canonicalBoard, 1)
             shape = list(np.shape(canonicalBoard))+[1]
-            probs, v = self.nnet.predict(np.concatenate([np.reshape(canonicalBoard,shape),
-                                                   np.reshape(mtx, shape),
-                                                   heuristic_components], axis=2),curPlayer)
+            probs, v, logits, exp_val, sum_val, valids2= self.nnet.predict(
+                np.concatenate([np.reshape(canonicalBoard,shape),
+                                np.reshape(mtx, shape),
+                                heuristic_components], axis=2),curPlayer)
             #probs, v = self.nnet.predict(canonicalBoard, curPlayer)
-            mtx = []
-            if self.lambdaHeur > 0.0:
-                mtx = self.heuristic.get_field_stregth_mtx(canonicalBoard, 1)
-                mtx = np.append(mtx, [0.0])
-                #mtx /= np.max(mtx)
-                #probs /=np.max(probs)
-                probs = (1.0-self.lambdaHeur)*probs + self.lambdaHeur*np.resize(mtx,(np.prod(mtx.shape)))
-                #probs = np.resize(mtx,(np.prod(mtx.shape)))
-                #v = (1.0-self.lambdaHeur)*v+self.lambdaHeur*v0    
-                #v = -curPlayer / (self.heuristic.line_sum(canonicalBoard)+ 1.0)
             #probs+=0.25*np.random.dirichlet([0.3]*len(probs))
             
             valids = self.game.getValidMoves(canonicalBoard, curPlayer)
@@ -118,9 +109,13 @@ class MCTS():
             else:
                 #probs2, v2 = self.nnet.predict(canonicalBoard, -curPlayer)
                 display(canonicalBoard, end = True)
+                print("exp: ", exp_val)
+                print("sum: ", sum_val)
+                print("logits: ", logits)
                 print("probs: ", probs)
                 print("mtx: ", mtx)
                 print("valids: ", valids)
+                print("valids2: ", valids2)
                 # if all valid moves were masked make all valid moves equally probable
                 
                 # NB! All valid moves may be masked if either your NNet architecture

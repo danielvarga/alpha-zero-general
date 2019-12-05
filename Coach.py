@@ -81,6 +81,7 @@ def AsyncSelfPlay(game,args,iter_num,bar):
             mtx = mcts.heuristic.get_field_stregth_mtx(board, 1)
             heuristic_components = mcts.heuristic.get_x_line_mtx(board, 1)
             shape = list(np.shape(board))+[1]
+            #print(pi, counts)
             #mtx = np.append(mtx, [0.0])
             #pi= np.resize(mtx,(np.prod(mtx.shape)))**2
             #pi/=float(sum(pi))
@@ -178,7 +179,7 @@ def AsyncTrainNetwork(game,args,trainhistory):
 
 def AsyncAgainst(game,args,iter_num,bar):
     # create separate seeds for each worker
-    # np.random.seed(iter_num)
+    np.random.seed(iter_num)
 
     if args.displaybar:
         bar.suffix = "iter:{i}/{x} | Total: {total:} | ETA: {eta:}".format(

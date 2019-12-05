@@ -31,7 +31,7 @@ args = dotdict({
     'checkpoint': './temp/',
     'numItersForTrainExamplesHistory': 20,
     'lambdaHeur':0.0,
-    'coeff':0.9,
+    'coeff':0.93,
 })
 
 if __name__=="__main__":

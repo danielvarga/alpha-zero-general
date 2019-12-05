@@ -71,7 +71,7 @@ class GobangGame(Game):
     def getGameEnded(self, board, player, action):
         """
         Return the Reward for the current board:
-        empty_field  : if GAME OVER
+        +/- 1         : if GAME OVER
         0             : if game is not over
         """
         if(action < 0):
@@ -79,7 +79,9 @@ class GobangGame(Game):
         
         if self.heuristic.has_lost(board, -1, action):
            return player
-        elif(np.min(np.absolute(board))==1):
+        #elif(np.min(np.absolute(board))==1):
+        elif(self.heuristic.no_free_line(board)):
+            # ===== This is a stronger stop  condition, than =====
            return -player
         else:
            return 0

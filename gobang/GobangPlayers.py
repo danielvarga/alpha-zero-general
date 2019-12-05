@@ -38,6 +38,24 @@ class Heuristic():
             a = np.random.choice(range(len(probs)), p = probs)
             return a
 
+    def empty_line(self, line, board):
+        for x0,y0 in line:
+            if(board[x0][y0]==-1):
+                return False
+        return True
+
+    def no_free_line(self, board):
+        for key, lines in self.pointStrengthHeuristics.items():
+            x, y = key
+            if board[x][y]!=0:
+                continue
+
+            for line in lines:
+                if self.empty_line(line, board):
+                    return False
+
+        return True
+        
     def has_lost(self, board, player, action):
         x = action//self.N
         y = action % self.N
@@ -249,8 +267,10 @@ class PolicyPlayer():
         mtx = self.heuristic.get_field_stregth_mtx(board, 1)
         heuristic_components = self.heuristic.get_x_line_mtx(board, 1)
         shape = list(np.shape(board))+[1]
-        probs, v = self.nnet.predict(np.concatenate([np.reshape(board,shape),
-                                                     np.reshape(mtx, shape),
-                                                     heuristic_components], axis=2),curPlayer)
+        new_board = np.concatenate([np.reshape(board,shape),
+                                    np.reshape(mtx, shape),
+                                    heuristic_components], axis=2)
+        print(np.shape(new_board))
+        probs, v, logits, exp_val, sum_val, valids2 = self.nnet.predict(new_board,curPlayer)
         valids = self.game.getValidMoves(board, curPlayer)
         return np.argmax(probs*valids)

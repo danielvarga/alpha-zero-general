@@ -67,9 +67,9 @@ class NNetWrapper(NeuralNet):
 
                 # record loss
                 self.sess.run(self.nnet.train_step, feed_dict=input_dict)
-                pi_loss, v_loss, v, input, output = self.sess.run(
-                    [self.nnet.loss_pi,self.nnet.loss_v, self.nnet.v, self.nnet.input,
-                     self.nnet.output], feed_dict=input_dict)
+                pi_loss, v_loss, v, logits, exp_val, sum_val = self.sess.run(
+                    [self.nnet.loss_pi, self.nnet.loss_v, self.nnet.v, self.nnet.logits,
+                     self.nnet.exp_val, self.nnet.sum_val], feed_dict=input_dict)
                 #print(input, output, pis)
                 #print("target_v: {}".format(vs))
                 #print(" model_v: {}".format(v))
@@ -109,13 +109,14 @@ class NNetWrapper(NeuralNet):
         curPlayer = np.array([[curPlayer]])
 
         # run
-        prob, v = self.sess.run([self.nnet.prob, self.nnet.v],
-                                feed_dict={self.nnet.input_boards: board,
-                                           self.nnet.curPlayer:curPlayer,
-                                           self.nnet.dropout: 0.0, self.nnet.isTraining: False})
+        prob, v, logits, exp_val, sum_val, valids= self.sess.run(
+            [self.nnet.prob, self.nnet.v, self.nnet.logits, self.nnet.exp_val, self.nnet.sum_val, self.nnet.valids],
+            feed_dict={self.nnet.input_boards: board,
+                       self.nnet.curPlayer:curPlayer,
+                       self.nnet.dropout: 0.0, self.nnet.isTraining: False})
 
         #print('PREDICTION TIME TAKEN : {0:03f}'.format(time.time()-start))
-        return prob[0], v[0]
+        return prob[0], v[0], logits[0], exp_val[0], sum_val[0], valids[0]
 
     def save_checkpoint(self, folder='checkpoint', filename='checkpoint.pth.tar'):
         filepath = os.path.join(folder, filename)
