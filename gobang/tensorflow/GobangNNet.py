@@ -48,7 +48,7 @@ class GobangNNet():
         self.loss_pi =  tf.losses.softmax_cross_entropy(self.target_pis, self.pi)
         #self.loss_pi =  tf.losses.mean_squared_error(self.target_pis, self.prob)
         self.loss_v = tf.losses.mean_squared_error(self.target_vs, tf.reshape(self.v, shape=[-1,]))
-        self.total_loss = 40.0 *self.loss_pi + self.loss_v
+        self.total_loss = self.loss_pi + self.args.pi_weight*self.loss_v
         update_ops = tf.get_collection(tf.GraphKeys.UPDATE_OPS)
         with tf.control_dependencies(update_ops):
             #self.train_step = tf.train.AdamOptimizer(self.args.lr).minimize(self.total_loss)
@@ -56,7 +56,6 @@ class GobangNNet():
             gvs = optimizer.compute_gradients(self.total_loss)
             capped_gvs = [(tf.clip_by_value(grad, -1., 1.), var) for grad, var in gvs]
             self.train_step = optimizer.apply_gradients(capped_gvs)
-
 
     def valid_softmax(self, logits, valids):
         # Need to be logged:

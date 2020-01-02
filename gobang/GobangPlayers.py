@@ -1,4 +1,4 @@
-
+import time
 import numpy as np
 
 
@@ -271,6 +271,11 @@ class PolicyPlayer():
                                     np.reshape(mtx, shape),
                                     heuristic_components], axis=2)
         print(np.shape(new_board))
+        start = time.time()
         probs, v, logits, exp_val, sum_val, valids2 = self.nnet.predict(new_board,curPlayer)
+        end1 = time.time()
         valids = self.game.getValidMoves(board, curPlayer)
+        move = np.argmax(probs*valids)
+        end2 = time.time()
+        print(end1-start, end2-end1)
         return np.argmax(probs*valids)

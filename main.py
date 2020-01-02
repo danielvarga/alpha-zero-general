@@ -11,19 +11,19 @@ Before using multiprocessing, please check 2 things before use this script.
 args = dotdict({
     'displaybar': True,
     'multiCPU': True,
-    'numIters': 30,
+    'numIters': 10,
     'numEps': 100,
     'tempThreshold': 48,
     'updateThreshold': 0.51,
     'maxlenOfQueue': 320000,
-    'numMCTSSims': 400,
-    'cpuct': 3.5,
+    'numMCTSSims': 800,
+    'cpuct': 2.5,
     'multiGPU': True,
     'setGPU': '1,2',
     # The total number of games when self-playing is:
     # Total = numSelfPlayProcess * numPerProcessSelfPlay
     'numSelfPlayProcess': 20,
-    'numPerProcessSelfPlay': 40,
+    'numPerProcessSelfPlay': 60,
     # The total number of games when against-playing is:
     # Total = numAgainstPlayProcess * numPerProcessAgainst
     'numAgainstPlayProcess': 20,
@@ -31,7 +31,9 @@ args = dotdict({
     'checkpoint': './temp/',
     'numItersForTrainExamplesHistory': 20,
     'lambdaHeur':0.0,
-    'coeff':0.93,
+    'coeff':0.9,
+    # Keep just the last N step of training, 0 if train from all steps
+    'learnFromEnd':0,
 })
 
 if __name__=="__main__":
@@ -46,6 +48,6 @@ if __name__=="__main__":
     # tf.logging.info('TensorFlow')
     # os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3' 
 
-    g = Game(col=8, row=4, nir=7, defender=-1)
+    g = Game(col=12, row=4, nir=7, defender=-1)
     c = Coach(g, args)
     c.learn()

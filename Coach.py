@@ -81,25 +81,20 @@ def AsyncSelfPlay(game,args,iter_num,bar):
             mtx = mcts.heuristic.get_field_stregth_mtx(board, 1)
             heuristic_components = mcts.heuristic.get_x_line_mtx(board, 1)
             shape = list(np.shape(board))+[1]
-            #print(pi, counts)
-            #mtx = np.append(mtx, [0.0])
-            #pi= np.resize(mtx,(np.prod(mtx.shape)))**2
-            #pi/=float(sum(pi))
             trainExamples.append([np.concatenate([np.reshape(board,shape),
                                                    np.reshape(mtx, shape),
                                                    heuristic_components], axis=2),
                                   curPlayer, pi, action])
-            #print("www\n",board.transpose(), curPlayer,"\n")
-            #print(np.resize(pi[:-1],(8,4) ).transpose())
-
+            
             #action = np.random.choice(len(pi), p=pi)
             board, curPlayer = game.getNextState(board, curPlayer, action)
 
             r = game.getGameEnded(board, curPlayer, action)
             if r!=0: # game is over
-                reward0 = r*(float(boardSize-episodeStep+1)/16.0)
+                reward0 = r*(float(boardSize-episodeStep+1)/(boardSize))
                 #reward0=r*(1/episodeStep)
                 mylist = []
+                # === Log info ===
                 if False :
                     print("\n",r, curPlayer, "\n")
                     display(board, end = True)
@@ -107,7 +102,7 @@ def AsyncSelfPlay(game,args,iter_num,bar):
                     print(np.resize(pi[:-1],np.shape(board) ).transpose())
                     print("")
 
-                for i,x in enumerate(reversed(trainExamples[:])):
+                for i,x in enumerate(reversed(trainExamples[args.learnFromEnd:])):
                     reward = (args.coeff**(i//2))*reward0*((-1)**(x[1]!=curPlayer))
                     mylist.append((x[0], x[1], x[2], reward))
                 templist.append(list(mylist))
@@ -167,15 +162,7 @@ def AsyncTrainNetwork(game,args,trainhistory):
     myboard = np.zeros((8,4))
     myboard[0][1]=1
     myboard[1][1]=-1
-    #probs, v =  nnet.predict(myboard, 1)
-    #probs = np.resize(probs[:-1], (8,4)).transpose()
-    #probs2, v2 =  nnet.predict(myboard, -1)
-    #probs2 = np.resize(probs2[:-1], (8,4)).transpose()
-    #print(probs, v)
-    #print(probs2, v2)
-    #heur = Heuristic(game)
-    #mtx = heur.get_field_stregth_mtx(np.zeros((8,4)), 1).transpose()
-    #print(mtx/np.sum(mtx))
+    
 
 def AsyncAgainst(game,args,iter_num,bar):
     # create separate seeds for each worker
@@ -196,7 +183,7 @@ def AsyncAgainst(game,args,iter_num,bar):
         os.environ["CUDA_VISIBLE_DEVICES"] = args.setGPU
 
     #set gpu memory grow
-    config = tf.ConfigProto()  
+    config = tf.ConfigProto()
     config.gpu_options.allow_growth=True  
     sess = tf.Session(config=config)
               

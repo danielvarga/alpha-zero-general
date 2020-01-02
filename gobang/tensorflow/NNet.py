@@ -19,6 +19,7 @@ args = dotdict({
     'epochs': 10,
     'batch_size': 32,
     'num_channels': 128,
+    'pi_weight':10.0,
 })
 
 class NNetWrapper(NeuralNet):
@@ -97,7 +98,7 @@ class NNetWrapper(NeuralNet):
                     bar.next()
             bar.finish()
 
-    def predict(self, board, curPlayer):
+    def predict(self, board, curPlayer, multi = False):
         """
         board: np array with board
         """
@@ -105,9 +106,11 @@ class NNetWrapper(NeuralNet):
         # start = time.time()
        
         # preparing input
-        board = board[np.newaxis, :, :]
-        curPlayer = np.array([[curPlayer]])
-
+        if not multi:
+            board = board[np.newaxis, :, :]
+            curPlayer = np.array([[curPlayer]])
+        else:
+            curPlayer = curPlayer[:, np.newaxis]
         # run
         prob, v, logits, exp_val, sum_val, valids= self.sess.run(
             [self.nnet.prob, self.nnet.v, self.nnet.logits, self.nnet.exp_val, self.nnet.sum_val, self.nnet.valids],
@@ -116,7 +119,10 @@ class NNetWrapper(NeuralNet):
                        self.nnet.dropout: 0.0, self.nnet.isTraining: False})
 
         #print('PREDICTION TIME TAKEN : {0:03f}'.format(time.time()-start))
-        return prob[0], v[0], logits[0], exp_val[0], sum_val[0], valids[0]
+        if multi:
+            return prob
+        else:
+            return prob[0], v[0], logits[0], exp_val[0], sum_val[0], valids[0]
 
     def save_checkpoint(self, folder='checkpoint', filename='checkpoint.pth.tar'):
         filepath = os.path.join(folder, filename)
