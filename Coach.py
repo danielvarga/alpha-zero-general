@@ -112,7 +112,6 @@ def AsyncSelfPlay(game,args,iter_num,bar):
     return returnlist
 
 def AsyncTrainNetwork(game,args,trainhistory):
-
     #set gpu
     os.environ["CUDA_VISIBLE_DEVICES"] = args.setGPU
     #create network for training
@@ -228,15 +227,30 @@ def CheckResultAndSaveNetwork(pwins,nwins,draws,game,args,iter_num):
         print('REJECTING NEW MODEL')
         print(draws)
 
-def play_games(arena, numProcess):
+def play_games(arena, numProcess, processID):
+    np.random.seed(processID)
+    #set gpu
+    if(args.multiGPU):
+        if(iter_num%2==0):
+            os.environ["CUDA_VISIBLE_DEVICES"] = "1"
+        else:
+            os.environ["CUDA_VISIBLE_DEVICES"] = "2"
+    else:
+        os.environ["CUDA_VISIBLE_DEVICES"] = args.setGPU
+
+    #set gpu memory grow
+    config = tf.ConfigProto()
+    config.gpu_options.allow_growth=True  
+    sess = tf.Session(config=config)
+    
     return arena.playGames(numProcess, verbose=False)
     
-def run_arena_paralell(arena, args):
+def run_arena_parallel(arena, args):
     pool = multiprocessing.Pool(processes=args.numAgainstPlayProcess)
     res = []
     for i in range(args.numAgainstPlayProcess):
         res.append(pool.apply_async(play_games,
-                                    args=[arena, args.numPerProcessAgainst]))
+                                    args=[arena, args.numPerProcessAgainst, i]))
     pool.close()
     pool.join()
 
@@ -259,12 +273,12 @@ def logCurrentCapabilities(game, iter_num, args):
     rp = RandomPlayer(game).play
 
     arena = Arena(n2p, heuristic,  game, display=display)
-    resultHeur = "{} {}".format(*arena.playGames(40, verbose=False)[:2])
-    #resultHeur = "{} {}".format(*run_arena_paralell(arena, args))
+    #resultHeur = "{} {}".format(*arena.playGames(40, verbose=False)[:2])
+    resultHeur = "[Parallel] {} {}".format(*run_arena_parallel(arena, args))
     
     arena = Arena(n2p, rp,  game, display=display)
-    resultRand = "{} {}".format(*arena.playGames(40, verbose=False)[:2])
-    #resultHeur = "{} {}".format(*run_arena_paralell(arena, args))
+    #resultRand = "{} {}".format(*arena.playGames(40, verbose=False)[:2])
+    resultRand = "[Parallel] {} {}".format(*run_arena_parallel(arena, args))
     
     MyLogger.info("Iter:{} Heuristic: {} Random: {}".format(iter_num, resultHeur, resultRand))
     print("Iter:{} Heuristic: {} Random: {}\n".format(iter_num, resultHeur, resultRand))
