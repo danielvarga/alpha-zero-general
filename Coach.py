@@ -222,12 +222,11 @@ def CheckResultAndSaveNetwork(pwins,nwins,draws,game,args,iter_num):
         net.load_checkpoint(folder=args.checkpoint, filename='train.pth.tar')
         net.save_checkpoint(folder=args.checkpoint, filename='best.pth.tar')
         net.save_checkpoint(folder=args.checkpoint, filename='checkpoint_' + str(iter_num) + '.pth.tar')
-        logCurrentCapabilities(game, iter_num, args)
     else:
         print('REJECTING NEW MODEL')
         print(draws)
 
-def play_games(arena, numProcess, processID):
+def play_games(game, args, processID, enemy):
     np.random.seed(processID)
     #set gpu
     if(args.multiGPU):
@@ -242,8 +241,19 @@ def play_games(arena, numProcess, processID):
     config = tf.ConfigProto()
     config.gpu_options.allow_growth=True  
     sess = tf.Session(config=config)
+
     
-    return arena.playGames(numProcess, verbose=False)
+    # Players:
+    heuristic = Heuristic(game).play
+    policy = PolicyPlayer(game).play
+    rp = RandomPlayer(game).play
+
+    if enemy == "heuristic": second_player = heuristic
+    elif enemy == "rp": second_player = rp
+
+    arena = Arena(policy, second_player,  game, display=display)
+    
+    return arena.playGames(args.numPerProcessAgainst, verbose=False)
     
 def run_arena_parallel(arena, args):
     pool = multiprocessing.Pool(processes=args.numAgainstPlayProcess)
@@ -259,6 +269,14 @@ def run_arena_parallel(arena, args):
     return np.sum(res2, axis=0)[:2]
     
 def logCurrentCapabilities(game, iter_num, args):
+    if(args.multiGPU):
+        if(iter_num%2==0):
+            os.environ["CUDA_VISIBLE_DEVICES"] = "1"
+        else:
+            os.environ["CUDA_VISIBLE_DEVICES"] = "2"
+    else:
+        os.environ["CUDA_VISIBLE_DEVICES"] = args.setGPU
+
     # improved nnet player
     n2 = nn(game)
     n2.load_checkpoint('./temp/','best.pth.tar')
@@ -273,12 +291,10 @@ def logCurrentCapabilities(game, iter_num, args):
     rp = RandomPlayer(game).play
 
     arena = Arena(n2p, heuristic,  game, display=display)
-    #resultHeur = "{} {}".format(*arena.playGames(40, verbose=False)[:2])
-    resultHeur = "[Parallel] {} {}".format(*run_arena_parallel(arena, args))
+    resultHeur = "{} {}".format(*arena.playGames(40, verbose=False)[:2])
     
     arena = Arena(n2p, rp,  game, display=display)
-    #resultRand = "{} {}".format(*arena.playGames(40, verbose=False)[:2])
-    resultRand = "[Parallel] {} {}".format(*run_arena_parallel(arena, args))
+    resultRand = "{} {}".format(*arena.playGames(40, verbose=False)[:2])
     
     MyLogger.info("Iter:{} Heuristic: {} Random: {}".format(iter_num, resultHeur, resultRand))
     print("Iter:{} Heuristic: {} Random: {}\n".format(iter_num, resultHeur, resultRand))
@@ -361,6 +377,19 @@ class Coach():
         else:
             CheckResultAndSaveNetwork(pwins, nwins, draws, self.game, self.args, iter_num)
 
+    def parallel_check_against(self, iter_num, enemy):
+        if self.args.multiCPU:
+            pool = multiprocessing.Pool(processes=self.args.numAgainstPlayProcess)
+            res = []
+            for i in range(self.args.numAgainstPlayProcess):
+                res.append(pool.apply_async(play_games,
+                                args=(self.game, self.args, i, enemy)))
+            pool.close()
+            pool.join()
+
+            res2 = [r.get() for r in res]
+            print("Parallel [{}]: {}/{} ".format(enemy, *np.sum(res2, axis=0)[:2].astype(int)))
+        
     def learn(self):
         """
         Performs numIters iterations with numEps episodes of self-play in each
@@ -379,6 +408,11 @@ class Coach():
             self.parallel_train_network(i)
             self.trainExamplesHistory.clear()
             self.parallel_self_test_play(i)
+            if self.args.multiCPU:
+                self.parallel_check_against(i, "rp")
+                self.parallel_check_against(i, "heuristic")
+            else:
+                logCurrentCapabilities(self.game, i, self.args)
             # Reduce influence of lambdaHeur
             #self.args.lambdaHeur*=0.95
-            self.args.cpuct*=0.95
+            #self.args.cpuct*=0.95
