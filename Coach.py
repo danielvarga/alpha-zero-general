@@ -389,7 +389,7 @@ class Coach():
 
             res2 = [r.get() for r in res]
             print("Parallel [{}]: {}/{} ".format(enemy, *np.sum(res2, axis=0)[:2].astype(int)))
-        
+            return np.sum(res2, axis=0)[:2].astype(int)
     def learn(self):
         """
         Performs numIters iterations with numEps episodes of self-play in each
@@ -398,7 +398,10 @@ class Coach():
         It then pits the new neural network against the old one and accepts it
         only if it wins >= updateThreshold fraction of games.
         """
+        gamesNum = self.args.numSelfPlayProcess*self.args.numPerProcessSelfPlay
         MyLogger.info("============== New Run ==============")
+        MyLogger.info("sims: {} cpuct: {} gamesNum: {} coeff: {}".format(
+            self.args.numMCTSSims, self.args.cpuct, gamesNum, self.args.coeff))
         for i in range(1, self.args.numIters+1):
             print('------ITER ' + str(i) + '------')
             iterationTrainExamples = deque([], maxlen=self.args.maxlenOfQueue)
@@ -409,8 +412,11 @@ class Coach():
             self.trainExamplesHistory.clear()
             self.parallel_self_test_play(i)
             if self.args.multiCPU:
-                self.parallel_check_against(i, "rp")
-                self.parallel_check_against(i, "heuristic")
+                resultRand=self.parallel_check_against(i, "rp")
+                resultHeur=self.parallel_check_against(i, "heuristic")
+
+                MyLogger.info("Iter:{} Heuristic: {} Random: {}".
+                              format(i, resultHeur, resultRand))
             else:
                 logCurrentCapabilities(self.game, i, self.args)
             # Reduce influence of lambdaHeur

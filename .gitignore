@@ -16,3 +16,4 @@ temp*
 amoba_samples
 *.log
 *.err
+*.out

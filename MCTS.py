@@ -93,14 +93,35 @@ class MCTS():
             # leaf node
             mtx = self.heuristic.get_field_stregth_mtx(canonicalBoard, 1)
             heuristic_components = self.heuristic.get_x_line_mtx(canonicalBoard, 1)
+
+            # If next step is a obligatory
+            if np.sum(heuristic_components[...,0])>0:
+                # Move the only choice:
+                a = np.argmax(heuristic_components[...,0].flatten())
+                onehot = np.zeros((self.game.getActionSize(),))
+                onehot[a] = 1
+                self.Vs[s]= onehot
+                self.Ns[s]=0
+                
+                #display(canonicalBoard, end = True)
+                #print("Best step:", a)
+                
+                next_s, next_player = self.game.getNextState(canonicalBoard, curPlayer, a)
+                v = self.search(next_s, next_player, a)
+                self.Qsa[(s,a)] = v
+                self.Nsa[(s,a)] = 1
+                
+                return -v
+            elif self.args.evaluationDepth > 1:
+                1#probs, v = self.evalSituation(canonicalBoard, curPlayer, action)
+                
+            
             shape = list(np.shape(canonicalBoard))+[1]
             probs, v, logits, exp_val, sum_val, valids2= self.nnet.predict(
                 np.concatenate([np.reshape(canonicalBoard,shape),
                                 np.reshape(mtx, shape),
                                 heuristic_components], axis=2),curPlayer)
-            #probs, v = self.nnet.predict(canonicalBoard, curPlayer)
-            #probs+=0.25*np.random.dirichlet([0.3]*len(probs))
-            
+
             valids = self.game.getValidMoves(canonicalBoard, curPlayer)
             self.Ps[s] = probs*valids      # masking invalid moves
             sum_Ps_s = np.sum(self.Ps[s])
@@ -163,3 +184,20 @@ class MCTS():
 
         self.Ns[s] += 1
         return -v
+    
+    def evalSituation(self, canonicalBoard, curPlayer, action):
+        next_s, next_player = canonicalBoard, curPlayer
+        a = action
+        for i in range(self.args.evaluationDepth):
+            mtx = self.heuristic.get_field_stregth_mtx(next_s, 1)
+            heuristic_components = self.heuristic.get_x_line_mtx(next_s, 1)
+            shape = list(np.shape(next_s))+[1]
+            
+            probs, v, logits, exp_val, sum_val, valids2 = self.nnet.predict(
+                np.concatenate([np.reshape(next_s,shape),
+                                np.reshape(mtx, shape),
+                                heuristic_components], axis=2),next_player)
+            if i == 0: probs0 = probs
+            a = np.argmax(probs.flatten())
+            next_s, next_player = self.game.getNextState(next_s, next_player, a)
+        return v, probs0
