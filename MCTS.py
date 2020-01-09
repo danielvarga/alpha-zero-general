@@ -113,14 +113,14 @@ class MCTS():
                 
                 return -v
             elif self.args.evaluationDepth > 1:
-                1#probs, v = self.evalSituation(canonicalBoard, curPlayer, action)
-                
-            
-            shape = list(np.shape(canonicalBoard))+[1]
-            probs, v, logits, exp_val, sum_val, valids2= self.nnet.predict(
-                np.concatenate([np.reshape(canonicalBoard,shape),
-                                np.reshape(mtx, shape),
-                                heuristic_components], axis=2),curPlayer)
+                probs, v = self.evalSituation(canonicalBoard, curPlayer, action)
+                #print("Value after {} eval: {}".format(self.args.evaluationDepth,-v))
+            else:
+                shape = list(np.shape(canonicalBoard))+[1]
+                probs, v, logits, exp_val, sum_val, valids2= self.nnet.predict(
+                    np.concatenate([np.reshape(canonicalBoard,shape),
+                                    np.reshape(mtx, shape),
+                                    heuristic_components], axis=2),curPlayer)
 
             valids = self.game.getValidMoves(canonicalBoard, curPlayer)
             self.Ps[s] = probs*valids      # masking invalid moves
@@ -186,18 +186,40 @@ class MCTS():
         return -v
     
     def evalSituation(self, canonicalBoard, curPlayer, action):
+        # TODO:
+        #     - speedup with Es, Ps, Vs
+        #     - disadvantage???
         next_s, next_player = canonicalBoard, curPlayer
         a = action
-        for i in range(self.args.evaluationDepth):
+        i=0
+        probs0 = None
+        while i < self.args.evaluationDepth:
             mtx = self.heuristic.get_field_stregth_mtx(next_s, 1)
             heuristic_components = self.heuristic.get_x_line_mtx(next_s, 1)
             shape = list(np.shape(next_s))+[1]
-            
-            probs, v, logits, exp_val, sum_val, valids2 = self.nnet.predict(
-                np.concatenate([np.reshape(next_s,shape),
+            valids = self.game.getValidMoves(next_s, next_player)
+
+            if np.sum(heuristic_components[...,0])>0:
+                # Move the only choice:
+                a = np.argmax(heuristic_components[...,0].flatten())
+                probs = np.zeros((self.game.getActionSize(),))
+                probs[a] = 1
+                #print("Obligatory step:")
+                #display(next_s, end = True)
+            else:
+                probs, v, logits, exp_val, sum_val, valids2 = self.nnet.predict(
+                    np.concatenate([np.reshape(next_s,shape),
                                 np.reshape(mtx, shape),
                                 heuristic_components], axis=2),next_player)
-            if i == 0: probs0 = probs
-            a = np.argmax(probs.flatten())
+                i+=1
+
+            if probs0 is None:
+                probs0 = probs
+            a = np.argmax(probs*valids)
             next_s, next_player = self.game.getNextState(next_s, next_player, a)
-        return v, probs0
+
+            # === Check, whether the game is over: ===
+            reward = self.game.getGameEnded(next_s, next_player, a)
+            if reward != 0:
+                return probs0, reward
+        return probs0, v

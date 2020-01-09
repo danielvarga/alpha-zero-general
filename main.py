@@ -16,7 +16,7 @@ args = dotdict({
     'tempThreshold': 48,
     'updateThreshold': 0.51,
     'maxlenOfQueue': 320000,
-    'numMCTSSims': 40,
+    'numMCTSSims': 500,
     'cpuct': 3.5,
     'multiGPU': False,
     'setGPU': '1,2',
@@ -34,7 +34,7 @@ args = dotdict({
     'coeff':0.85,
     # Keep just the last N step of training, 0 if train from all steps
     'learnFromEnd':0,
-    'evaluationDepth':5,
+    'evaluationDepth':1,
 })
 
 if __name__=="__main__":

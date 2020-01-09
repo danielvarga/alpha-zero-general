@@ -400,8 +400,9 @@ class Coach():
         """
         gamesNum = self.args.numSelfPlayProcess*self.args.numPerProcessSelfPlay
         MyLogger.info("============== New Run ==============")
-        MyLogger.info("sims: {} cpuct: {} gamesNum: {} coeff: {}".format(
-            self.args.numMCTSSims, self.args.cpuct, gamesNum, self.args.coeff))
+        MyLogger.info("sims: {} cpuct: {} gamesNum: {} coeff: {} evalDepth: {}".format(
+            self.args.numMCTSSims, self.args.cpuct, gamesNum,
+            self.args.coeff, self.args.evaluationDepth))
         for i in range(1, self.args.numIters+1):
             print('------ITER ' + str(i) + '------')
             iterationTrainExamples = deque([], maxlen=self.args.maxlenOfQueue)
