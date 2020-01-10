@@ -102,8 +102,8 @@ if __name__=="__main__":
     'numMCTSSims': 25,
     'cpuct': 3,
 
-    'multiGPU': True,  # multiGPU only support 2 GPUs.
-    'setGPU': '4,5',
+    'multiGPU': False,  # multiGPU only support 2 GPUs.
+    'setGPU': '1,2',
     'numPlayGames': 4,  # total num should x2, because each process play 2 games.
     'numPlayPool': 4,   # num of processes pool.
 
@@ -152,7 +152,7 @@ if __name__=="__main__":
     n1 = NNet(g)
     n1.load_checkpoint('./temp/','best.pth.tar')
 
-    args1 = dotdict({'numMCTSSims': 400, 'cpuct':3.5, 'multiGPU':True})
+    args1 = dotdict({'numMCTSSims': 400, 'cpuct':3.5, 'evaluationDepth':1, 'multiGPU': args.multiGPU, 'setGPU':args.setGPU,})
     mcts1 = MCTS(g, n1, args1, lambdaHeur=0.1)
     n1p = lambda b, p: np.argmax(mcts1.getActionProb(b, p, temp=0))
 
@@ -190,7 +190,7 @@ if __name__=="__main__":
         arena = Arena.Arena(policyPlayer, hp, g, display=display)
         print(arena.playGames(4, verbose=True))
     elif modeargs.mode == 'one2one':
-        arena = Arena.Arena(policyPlayer, heuristic,  g, display=display)
+        arena = Arena.Arena(n1p, heuristic,  g, display=display)
         print(arena.playGames(20, verbose=True))
     elif modeargs.mode == 'one2all':
         results = []

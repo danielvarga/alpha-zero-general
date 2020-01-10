@@ -16,8 +16,8 @@ args = dotdict({
     'tempThreshold': 48,
     'updateThreshold': 0.51,
     'maxlenOfQueue': 320000,
-    'numMCTSSims': 500,
-    'cpuct': 3.5,
+    'numMCTSSims': 100,
+    'cpuct': 2.0,
     'multiGPU': False,
     'setGPU': '1,2',
     # The total number of games when self-playing is:
@@ -31,10 +31,10 @@ args = dotdict({
     'checkpoint': './temp/',
     'numItersForTrainExamplesHistory': 20,
     'lambdaHeur':0.0,
-    'coeff':0.85,
+    'coeff':0.9,
     # Keep just the last N step of training, 0 if train from all steps
     'learnFromEnd':0,
-    'evaluationDepth':1,
+    'evaluationDepth':5,
 })
 
 if __name__=="__main__":
