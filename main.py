@@ -9,15 +9,15 @@ Before using multiprocessing, please check 2 things before use this script.
 2. Make sure all Neural Network which each process created can store in VRAM at same time. Check your NN size before use this.
 """
 args = dotdict({
-    'displaybar': True,
+    'displaybar': False,
     'multiCPU': True,
     'numIters': 10,
     'numEps': 100,
     'tempThreshold': 48,
     'updateThreshold': 0.51,
     'maxlenOfQueue': 320000,
-    'numMCTSSims': 100,
-    'cpuct': 2.0,
+    'numMCTSSims': 450,
+    'cpuct': 3.0,
     'multiGPU': False,
     'setGPU': '1,2',
     # The total number of games when self-playing is:
@@ -31,10 +31,10 @@ args = dotdict({
     'checkpoint': './temp/',
     'numItersForTrainExamplesHistory': 20,
     'lambdaHeur':0.0,
-    'coeff':0.9,
+    'coeff':0.85,
     # Keep just the last N step of training, 0 if train from all steps
     'learnFromEnd':0,
-    'evaluationDepth':5,
+    'evaluationDepth':1,
 })
 
 if __name__=="__main__":

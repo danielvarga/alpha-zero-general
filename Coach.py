@@ -224,6 +224,7 @@ def CheckResultAndSaveNetwork(pwins,nwins,draws,game,args,iter_num):
         net.save_checkpoint(folder=args.checkpoint, filename='checkpoint_' + str(iter_num) + '.pth.tar')
     else:
         print('REJECTING NEW MODEL')
+        MyLogger.info('REJECTING NEW MODEL')
         print(draws)
 
 def play_games(game, args, processID, enemy):
@@ -250,6 +251,16 @@ def play_games(game, args, processID, enemy):
 
     if enemy == "heuristic": second_player = heuristic
     elif enemy == "rp": second_player = rp
+    elif enemy == "n1p":
+        # improved nnet player
+        n1 = nn(game)
+        n1.load_checkpoint('./temp/','best.pth.tar')
+        mcts1 = MCTS(game, n1, args, lambdaHeur=args.lambdaHeur)
+        n1p =  lambda b, p: np.argmax(mcts1.getActionProb(b, p, temp=0))
+
+        second_player = n1p
+        arena = Arena(n1p, heuristic,  game, display=display)
+        return arena.playGames(args.numPerProcessAgainst, verbose=False)
 
     arena = Arena(policy, second_player,  game, display=display)
     
@@ -415,9 +426,10 @@ class Coach():
             if self.args.multiCPU:
                 resultRand=self.parallel_check_against(i, "rp")
                 resultHeur=self.parallel_check_against(i, "heuristic")
+                resultMCTS=self.parallel_check_against(i, "n1p")
 
-                MyLogger.info("Iter:{} Heuristic: {} Random: {}".
-                              format(i, resultHeur, resultRand))
+                MyLogger.info("Iter:{} Heuristic: {} Random: {} MCTS: {}".
+                              format(i, resultHeur, resultRand, resultMCTS))
             else:
                 logCurrentCapabilities(self.game, i, self.args)
             # Reduce influence of lambdaHeur
