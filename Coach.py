@@ -291,8 +291,8 @@ def logCurrentCapabilities(game, iter_num, args):
     # improved nnet player
     n2 = nn(game)
     n2.load_checkpoint('./temp/','best.pth.tar')
-    args2 = dotdict({'numMCTSSims': args.numMCTSSims, 'cpuct':args.cpuct, 'multiGPU':True})
-    mcts2 = MCTS(game, n2, args2, lambdaHeur=args.lambdaHeur)
+    #args2 = dotdict({'numMCTSSims': args.numMCTSSims, 'cpuct':args.cpuct, 'multiGPU':True})
+    mcts2 = MCTS(game, n2, args)
     n2p =  lambda b, p: np.argmax(mcts2.getActionProb(b, p, temp=0))
 
     # Heuristic player:

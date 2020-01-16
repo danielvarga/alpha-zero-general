@@ -95,9 +95,15 @@ class MCTS():
             heuristic_components = self.heuristic.get_x_line_mtx(canonicalBoard, 1)
 
             # If next step is a obligatory
-            if np.sum(heuristic_components[...,0])>0:
+            oneStepWin = (heuristic_components[...,0]>0).any()
+            twoStepWin = (heuristic_components[...,1]>1).any()
+            if oneStepWin or twoStepWin:
                 # Move the only choice:
-                a = np.argmax(heuristic_components[...,0].flatten())
+                if oneStepWin:
+                    chanel = 0
+                else:
+                    chanel = 1
+                a = np.argmax(heuristic_components[...,chanel].flatten())
                 onehot = np.zeros((self.game.getActionSize(),))
                 onehot[a] = 1
                 self.Vs[s]= onehot
@@ -112,6 +118,7 @@ class MCTS():
                 self.Nsa[(s,a)] = 1
                 
                 return -v
+            
             elif self.args.evaluationDepth > 1:
                 probs, v = self.evalSituation(canonicalBoard, curPlayer, action)
                 #print("Value after {} eval: {}".format(self.args.evaluationDepth,-v))

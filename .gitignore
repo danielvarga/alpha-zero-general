@@ -17,3 +17,8 @@ amoba_samples
 *.log
 *.err
 *.out
+cpp_loadmodel/tflib*
+cpp_loadmodel/build*
+cpp_loadmodel/checkpoint*
+cpp_loadmodel/cppflow*
+*.pb

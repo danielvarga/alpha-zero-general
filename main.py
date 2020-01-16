@@ -9,15 +9,15 @@ Before using multiprocessing, please check 2 things before use this script.
 2. Make sure all Neural Network which each process created can store in VRAM at same time. Check your NN size before use this.
 """
 args = dotdict({
-    'displaybar': False,
+    'displaybar': True,
     'multiCPU': True,
     'numIters': 10,
     'numEps': 100,
     'tempThreshold': 48,
     'updateThreshold': 0.51,
     'maxlenOfQueue': 320000,
-    'numMCTSSims': 450,
-    'cpuct': 3.0,
+    'numMCTSSims': 400,
+    'cpuct': 2.0,
     'multiGPU': False,
     'setGPU': '1,2',
     # The total number of games when self-playing is:
