@@ -175,9 +175,11 @@ class GobangNNet():
             s_fc1 = Dropout(rate=self.dropout)(Relu(Dense(1024)(h)))    # batch_size x 1024
             s_fc2 = Dropout(rate=self.dropout)(Relu(Dense(512)(s_fc1))) # batch_size x 512
 
-        self.pi = Dense(self.action_size)(s_fc2)                # batch_size x self.action_size
+        self.pi = Dense(self.action_size, name="pi")(s_fc2)        # batch_size x self.action_size
         self.prob = tf.nn.softmax(self.pi, name = "prob")
         #self.prob = self.valid_softmax(self.pi, self.valids)
-        self.v = Tanh(Dense(1)(s_fc2), name = "v")                          # batch_size x 1
-
+        self.v = Tanh(Dense(1)(s_fc2), name = "v")                 # batch_size x 1
+        self.logits = self.pi
+        self.exp_val = self.prob
+        self.sum_val = self.prob
 
