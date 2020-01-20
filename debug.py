@@ -80,11 +80,7 @@ def check_capabilities(args, n1, game):
     print(arena.playGames(20, verbose=False))
    
     
-
-if __name__ == "__main__":
-    os.environ["CUDA_VISIBLE_DEVICES"] = "1,2"
-    g = GobangGame(col=12, row=4, nir=7, defender=-1)
-
+def train_from_scratch(g):
     trainExamples = load_history("temp", (0,10))
     print("Length: ", len(trainExamples))
     nnet = NNet(g)
@@ -96,4 +92,15 @@ if __name__ == "__main__":
     # === Predict) ===
     calc_accuracy(nnet, trainExamples[0:10])
     check_capabilities(args, nnet, g)
+
+def save_act_model(g):
+    nnet = NNet(g)
+    nnet.load_checkpoint('./temp/','best.pth.tar')
+    nnet.save_model('cpp_loadmodel/amoba_model.pb')
+    print("Save done")
     
+if __name__ == "__main__":
+    os.environ["CUDA_VISIBLE_DEVICES"] = "1,2"
+    g = GobangGame(col=12, row=4, nir=7, defender=-1)
+
+    save_act_model(g)

@@ -30,7 +30,28 @@ def create_and_save_model():
     with open('model.pb', 'wb') as f:
         f.write(tf.get_default_graph().as_graph_def().SerializeToString())
 
-os.environ["CUDA_VISIBLE_DEVICES"] = '1,2'
+def create_wrapper():
+    print('Loading model...')
+    graph = tf.Graph()
+    sess = tf.InteractiveSession(graph = graph)
 
-create_and_save_model()
+    with tf.gfile.GFile("amoba_model.pb", 'rb') as f:
+        graph_def = tf.GraphDef()
+        graph_def.ParseFromString(f.read())
+
+    print('Check out the input placeholders:')
+    nodes = [n.name + ' => ' +  n.op for n in graph_def.node if n.op in ('Placeholder')]
+    for node in nodes:
+        print(node)
+    layers = [op for op in graph.get_operations()]
+    for layer in layers:
+        print(layer)
+
+    
+    sess.run("")
+
+    
+os.environ["CUDA_VISIBLE_DEVICES"] = '1,2'
+create_wrapper()
+#create_and_save_model()
 #graph()

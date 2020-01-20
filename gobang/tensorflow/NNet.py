@@ -136,6 +136,11 @@ class NNetWrapper(NeuralNet):
         with self.nnet.graph.as_default():
             self.saver.save(self.sess, filepath)
 
+    def save_model(self, filename):
+        saver = tf.train.Saver(self.nnet.graph.get_collection('variables'))
+        with open(filename, 'wb') as f:
+            f.write(tf.get_default_graph().as_graph_def().SerializeToString())
+
     def load_checkpoint(self, folder='checkpoint', filename='checkpoint.pth.tar'):
         filepath = os.path.join(folder, filename)
         if not os.path.exists(filepath+'.meta'):
