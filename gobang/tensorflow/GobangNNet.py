@@ -19,11 +19,12 @@ class GobangNNet():
         with self.graph.as_default():
             channel_num = 9
             self.input_boards = tf.placeholder(tf.float32,
-                                               shape=[None, self.board_x, self.board_y, channel_num])
+                                               shape=[None, self.board_x, self.board_y, channel_num],
+                                               name = "input_boards")
 
-            self.curPlayer = tf.placeholder(tf.float32, shape=[None,1])
-            self.dropout = tf.placeholder(tf.float32)
-            self.isTraining = tf.placeholder(tf.bool, name="is_training")
+            self.curPlayer = tf.placeholder(tf.float32, shape=[None,1], name = "curPlayer")
+            self.dropout = tf.placeholder(tf.float32, name="dropout")
+            self.isTraining = tf.placeholder(tf.bool, name="isTraining")
 
             self.build_conv_model(channel_num)
             #self.build_dense_model(channel_num)
@@ -175,8 +176,8 @@ class GobangNNet():
             s_fc2 = Dropout(rate=self.dropout)(Relu(Dense(512)(s_fc1))) # batch_size x 512
 
         self.pi = Dense(self.action_size)(s_fc2)                # batch_size x self.action_size
-        #self.prob = tf.nn.softmax(self.pi)
-        self.prob = self.valid_softmax(self.pi, self.valids)
-        self.v = Tanh(Dense(1)(s_fc2))                          # batch_size x 1
+        self.prob = tf.nn.softmax(self.pi, name = "prob")
+        #self.prob = self.valid_softmax(self.pi, self.valids)
+        self.v = Tanh(Dense(1)(s_fc2), name = "v")                          # batch_size x 1
 
 

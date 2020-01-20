@@ -31,27 +31,43 @@ def create_and_save_model():
         f.write(tf.get_default_graph().as_graph_def().SerializeToString())
 
 def create_wrapper():
+    from google.protobuf import text_format
+    import numpy as np
+    
     print('Loading model...')
-    graph = tf.Graph()
-    sess = tf.InteractiveSession(graph = graph)
+    f = open("train.pbtxt", "r")
+    graph_protobuf = text_format.Parse(f.read(), tf.GraphDef())
 
-    with tf.gfile.GFile("amoba_model.pb", 'rb') as f:
-        graph_def = tf.GraphDef()
-        graph_def.ParseFromString(f.read())
+    graph_clone = tf.Graph()
+    with graph_clone.as_default():
+        tf.import_graph_def(graph_def=graph_protobuf, name="")
+
+    #print(graph_clone.as_graph_def())
 
     print('Check out the input placeholders:')
-    nodes = [n.name + ' => ' +  n.op for n in graph_def.node if n.op in ('Placeholder')]
+    nodes = [n.name + ' => ' +  n.op for n in graph_protobuf.node if n.op in ('Placeholder')]
+    shapes = [[d. size for d in n.attr['shape'].shape.dim] for n in graph_protobuf.node if n.op in ('Placeholder')]
     for node in nodes:
         print(node)
-    layers = [op for op in graph.get_operations()]
-    for layer in layers:
-        print(layer)
+    print(shapes)
+    print(tf.global_variables())
+    layers = [op for op in graph_clone.get_operations()]
+    #for layer in layers:
+    #    print(layer)
 
+def reshape_input(filename):
+    from google.protobuf import text_format
     
-    sess.run("")
+    print('Loading model...')
+    f = open(filename, "r")
+    graph_protobuf = text_format.Parse(f.read(), tf.GraphDef())
 
-    
+    with tf.Graph().as_default() as graph1:
+        input = tf.placeholder(tf.float32, (None, 9), name='flat_board')
+        output = tf.identity(input, name='output')
+
 os.environ["CUDA_VISIBLE_DEVICES"] = '1,2'
+#reshape_input("train.pbtxt")
 create_wrapper()
 #create_and_save_model()
 #graph()
