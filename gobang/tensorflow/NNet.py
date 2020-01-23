@@ -137,10 +137,13 @@ class NNetWrapper(NeuralNet):
             self.saver.save(self.sess, filepath)
 
     def save_model(self, filename):
-        #saver = tf.train.Saver(self.nnet.graph.get_collection('variables'))
-        #with open(filename, 'wb') as f:
-        #    f.write(tf.get_default_graph().as_graph_def().SerializeToString())
-        tf.io.write_graph(self.nnet.graph, './cpp_loadmodel', 'train.pbtxt')
+        input_graph_def = self.nnet.graph.as_graph_def()
+        output_node_names = ['v', 'prob']
+        output_graph_def = tf.graph_util.convert_variables_to_constants(
+            self.sess, input_graph_def, output_node_names)
+
+        tf.io.write_graph(output_graph_def, './cpp_loadmodel', 'train.pbtxt')
+        #tf.io.write_graph(self.nnet.graph, './cpp_loadmodel', 'train.pbtxt')
 
     def load_checkpoint(self, folder='checkpoint', filename='checkpoint.pth.tar'):
         filepath = os.path.join(folder, filename)
