@@ -3,15 +3,9 @@
 #include <array>
 #include <cmath>
 
-#define ROW 4
-#define COL 12
-#define LINEINROW 7
-#define LAYERNUM 7
+#include "common.h"
 
-template<class T>
-using mtx = std::array<std::array<T,ROW>, COL> ;
-using Line = std::vector<std::pair<int,int>>;
-
+#pragma once 
 class Heuristic{
 public:
     std::vector<Line> lines;
@@ -24,8 +18,6 @@ public:
     void generate_lines();
     template<class T>
     std::array<mtx<T>, LAYERNUM+1> get_layers(mtx<int>& board);
-    template<class T>
-    void make_zero(mtx<T>& data);
 };
 
 template<class T>
@@ -118,14 +110,6 @@ void Heuristic::generate_lines(){
     }
 }
 
-template<class T>
-void Heuristic::make_zero(mtx<T>& data){
-    for(int j=0;j<COL;j++){
-        for(int k=0;k<ROW;k++){
-            data[j][k]=0;
-        }
-    }
-}
 
 
 
