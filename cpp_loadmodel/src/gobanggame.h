@@ -1,8 +1,9 @@
 #include <stdio.h>
-
 #pragma once
 
-typedef std::pair<int, int>(*FunctPtr)(mtx<int>&);
+class Player;
+
+typedef std::pair<int, int>(Player::*FunctPtr)(mtx<int>&);
 
 class GobangGame{
  public:
@@ -10,7 +11,7 @@ class GobangGame{
     void move(const int action, mtx<int>& board, const int curPlayer);
     void display(mtx<int>& board, bool end);
     void play(bool first);
-    void arena(FunctPtr player1, FunctPtr player2);
+    void arena(Player* player1, Player* player2, bool log);
 };
 
 struct bcolors{
@@ -36,46 +37,25 @@ void GobangGame::move(const int action, mtx<int>& board, const int curPlayer){
     board[y][x]=curPlayer;
 }
 
-void GobangGame::arena(FunctPtr player1, FunctPtr player2){
+void GobangGame::arena(Player* player1, Player* player2, bool log){
     mtx<int> board = init();
     int y,x;
+    Player* p;
     for(int i=0;i<COL*ROW/2;i++){
-        std::tie(y,x)=player1(board);
+        int actPlayer = 1-2*(i%2);
+        std::tie(y,x)=player1->move(board, actPlayer, log);
         board[y][x]=1;
-        display(board, false);
+        if(log) display(board, false);
 
-        std::tie(y,x)=player2(board);
-        board[y][x]=1;
-        display(board, false);
+        std::tie(y,x)=player2->move(board, actPlayer, log);
+        board[y][x]=-1;
+        if(log) display(board, false);
     }
-}
-
-void GobangGame::play(bool first){
-    mtx<int> board = init();
-    for(int i=0;i<COL*ROW/2;i++){
-        int x,y;
-        if(first){
-            std::cin>>y>>x;
-            board[y][x]=1;
-            display(board, false);
-            
-            std::cin>>y>>x;//##
-            board[y][x]=-1;
-        }
-        else{
-            std::cin>>y>>x;//##
-            board[y][x]=1;
-            display(board, false);
-
-            std::cin>>y>>x;
-            board[y][x]=-1;
-        }
-        display(board, false);
-    }
-    display(board, true);
+    if(log) display(board, true);
 }
 
 void GobangGame::display(mtx<int>& board, bool end){
+    int back_step = ROW+5; 
     printf("                           \n");
     printf("  === Gobang Game ===\n");
     printf("  ");
@@ -104,7 +84,7 @@ void GobangGame::display(mtx<int>& board, bool end){
         printf("|\n");
     }
     printf(" +========================+\n");
-    if (!end) printf("\033[%dA",ROW+6);
+    if (!end) printf("\033[%dA",back_step);
     printf("                           \n");
     printf("\033[1A");
 }

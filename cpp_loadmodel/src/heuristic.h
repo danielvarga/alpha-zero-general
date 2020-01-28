@@ -18,6 +18,8 @@ public:
     void generate_lines();
     template<class T>
     std::array<mtx<T>, LAYERNUM+1> get_layers(mtx<int>& board);
+    template<class T>
+    std::vector<T> get_flat_layers(mtx<int>& board);
 };
 
 template<class T>
@@ -46,6 +48,44 @@ std::array<mtx<T>, LAYERNUM+1> Heuristic::get_layers(mtx<int>& board){
                     layers[0][y][x]+=std::pow(2.0, -emptynum);
                 }
             }
+        }
+    }
+    return layers;
+}
+
+template<class T>
+std::vector<T> Heuristic::get_flat_layers(mtx<int>& board){
+    // === Description ===
+    // Returns the flattened input for the NN
+    //     - board (COL*ROW)
+    //     - heur mtx (COL*ROW)
+    //     - heur layers (LAYERSNUM*COL_ROW)
+    std::vector<T> layers(ROW*COL*(LAYERNUM+2), 0.0);
+    for(int i=0;i<lines.size();i++){
+        bool enemyless = true;
+        int emptynum = 0;
+        for(int j=0;j<lines[i].size();j++){
+            int y = lines[i][j].first, x = lines[i][j].second;
+            if(board[y][x]==-1){
+                enemyless=false;
+                break;
+            }
+            else if(board[y][x]==0) emptynum++;
+        }
+        if(enemyless){
+            for(int j=0;j<lines[i].size();j++){
+                int y = lines[i][j].first, x = lines[i][j].second;
+                if(board[y][x]==0){
+                    layers[(emptynum+1)*(ROW*COL)+(y*ROW+x)]+=1.0;
+                    layers[(ROW*COL)+(y*ROW+x)]+=std::pow(2.0, -emptynum);
+                }
+            }
+        }
+    }
+
+    for(int y=0;y<COL;y++){
+        for(int x=0;x<ROW;x++){
+            layers[y*ROW+x]=board[y][x];
         }
     }
     return layers;
