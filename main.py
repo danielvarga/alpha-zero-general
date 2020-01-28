@@ -10,28 +10,28 @@ Before using multiprocessing, please check 2 things before use this script.
 """
 args = dotdict({
     'displaybar': False,
-    'multiCPU': False,
-    'numIters': 5,
+    'multiCPU': True,
+    'numIters': 12,
     'numEps': 100,
     'tempThreshold': 48,
     'updateThreshold': 0.51,
     'maxlenOfQueue': 320000,
-    'numMCTSSims': 35,
+    'numMCTSSims': 400,
     'cpuct': 2.0,
     'multiGPU': False,
-    'setGPU': '1,2',
+    'setGPU': '0,1',
     # The total number of games when self-playing is:
     # Total = numSelfPlayProcess * numPerProcessSelfPlay
-    'numSelfPlayProcess': 10,
+    'numSelfPlayProcess': 20,
     'numPerProcessSelfPlay': 50,
     # The total number of games when against-playing is:
     # Total = numAgainstPlayProcess * numPerProcessAgainst
     'numAgainstPlayProcess': 10,
     'numPerProcessAgainst': 10,
     'checkpoint': './temp/',
-    'numItersForTrainExamplesHistory': 10,
+    'numItersForTrainExamplesHistory': 5,
     'lambdaHeur':0.0,
-    'coeff':0.9,
+    'coeff':0.85,
     # Keep just the last N step of training, 0 if train from all steps
     'learnFromEnd':0,
     'evaluationDepth':1,
@@ -49,6 +49,6 @@ if __name__=="__main__":
     # tf.logging.info('TensorFlow')
     # os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3' 
 
-    g = Game(col=12, row=4, nir=7, defender=-1)
+    g = Game(col=8, row=4, nir=7, defender=-1)
     c = Coach(g, args)
     c.learn()
