@@ -75,22 +75,22 @@ def check_capabilities(args, n1, game):
     policy = PolicyPlayer(game).play
 
     arena = Arena(policy, heuristic,  game, display=display)
-    print(arena.playGames(100, verbose=False))
+    print(arena.playGames(10, verbose=False))
     arena = Arena(n1p, heuristic,  game, display=display)
     print(arena.playGames(20, verbose=False))
    
     
-def train_from_scratch(g):
-    trainExamples = load_history("temp", (0,10))
+def train_from_scratch(g, interval):
+    trainExamples = load_history("temp", (0,interval[1]))
     print("Length: ", len(trainExamples))
     nnet = NNet(g)
     nnet.train(trainExamples)
-    trainExamples = load_history("temp", (5,10))
+    trainExamples = load_history("temp", (interval[1]//2,interval[1]))
     nnet.train(trainExamples)
-    trainExamples = load_history("temp", (5,10))
-    nnet.train(trainExamples)
+    #trainExamples = load_history("temp", (interval[0],interval[1]))
+    #nnet.train(trainExamples)
     # === Predict) ===
-    calc_accuracy(nnet, trainExamples[0:10])
+    calc_accuracy(nnet, trainExamples[interval[0]:interval[1]])
     check_capabilities(args, nnet, g)
 
 def save_act_model(g):
@@ -101,6 +101,6 @@ def save_act_model(g):
     
 if __name__ == "__main__":
     os.environ["CUDA_VISIBLE_DEVICES"] = "1,2"
-    g = GobangGame(col=12, row=4, nir=7, defender=-1)
-
-    save_act_model(g)
+    g = GobangGame(col=8, row=4, nir=7, defender=-1)
+    train_from_scratch(g, (0,5))
+    #save_act_model(g)

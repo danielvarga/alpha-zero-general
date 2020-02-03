@@ -137,7 +137,7 @@ if __name__=="__main__":
         print("Model 1 Win:",oneWon," Model 2 Win:",twoWon," Draw:",draws)
 
 
-    g = GobangGame(col=12, row=4, nir=7, defender=-1)
+    g = GobangGame(col=8, row=4, nir=7, defender=-1)
 
     # parallel version
     #ParallelPlay(g)

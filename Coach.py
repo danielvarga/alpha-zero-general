@@ -74,7 +74,7 @@ def AsyncSelfPlay(game,args,iter_num,bar):
         while True:
             templist = []
             episodeStep += 1
-            temp = int(episodeStep < args.tempThreshold)
+            temp = 1 if episodeStep < args.tempThreshold else episodeStep - args.tempThreshold
 
             pi, counts = mcts.getActionProb(board, curPlayer=curPlayer, temp=temp,debug=True)
             action = np.random.choice(len(pi), p=pi)
@@ -117,7 +117,8 @@ def AsyncTrainNetwork(game,args,trainhistory):
     #create network for training
     nnet = nn(game, args.displaybar)
     try:
-        nnet.load_checkpoint(folder=args.checkpoint, filename='best.pth.tar')
+        #nnet.load_checkpoint(folder=args.checkpoint, filename='best.pth.tar')
+        print("Retrain best model")
     except:
         pass
     #---load history file---
@@ -158,11 +159,7 @@ def AsyncTrainNetwork(game,args,trainhistory):
 
     #print(trainExamples[0][0].transpose(), trainExamples[0][2])
     print(len(trainExamples))
-    myboard = np.zeros((8,4))
-    myboard[0][1]=1
-    myboard[1][1]=-1
     
-
 def AsyncAgainst(game,args,iter_num,bar):
     # create separate seeds for each worker
     np.random.seed(iter_num)
