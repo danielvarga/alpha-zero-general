@@ -9,14 +9,14 @@ Before using multiprocessing, please check 2 things before use this script.
 2. Make sure all Neural Network which each process created can store in VRAM at same time. Check your NN size before use this.
 """
 args = dotdict({
-    'displaybar': True,
+    'displaybar': False,
     'multiCPU': True,
     'numIters': 10,
     'numEps': 100,
-    'tempThreshold': 16,
+    'tempThreshold': 24,
     'updateThreshold': 0.51,
     'maxlenOfQueue': 320000,
-    'numMCTSSims': 400,
+    'numMCTSSims': 500,
     'cpuct': 2.0,
     'multiGPU': False,
     'setGPU': '0',
@@ -51,6 +51,6 @@ if __name__=="__main__":
     # tf.logging.info('TensorFlow')
     # os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3' 
 
-    g = Game(col=8, row=4, nir=7, defender=-1)
+    g = Game(col=12, row=4, nir=7, defender=-1)
     c = Coach(g, args)
     c.learn()
