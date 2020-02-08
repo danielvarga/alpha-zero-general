@@ -117,8 +117,8 @@ def AsyncTrainNetwork(game,args,trainhistory):
     #create network for training
     nnet = nn(game, args.displaybar)
     try:
-        #nnet.load_checkpoint(folder=args.checkpoint, filename='best.pth.tar')
-        print("Retrain best model")
+        nnet.load_checkpoint(folder=args.checkpoint, filename='best.pth.tar')
+        #print("Retrain best model")
     except:
         pass
     #---load history file---

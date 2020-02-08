@@ -23,7 +23,8 @@ class MCTS():
         self.Vs = {}        # stores game.getValidMoves for board s
         self.heuristic = Heuristic(game)
         self.lambdaHeur = lambdaHeur
-
+        self.alphas = [args.alpha]*game.getActionSize()
+        
     def getActionProb(self, canonicalBoard, curPlayer, temp=1, debug=False):
         """
         This function performs numMCTSSims simulations of MCTS starting from
@@ -129,6 +130,12 @@ class MCTS():
                                     np.reshape(mtx, shape),
                                     heuristic_components], axis=2),curPlayer)
 
+
+            # === Add Dirichlet noise to pi: ===
+            eps = self.args.epsilon
+            noise = np.random.dirichlet(self.alphas)
+            probs = eps*noise+(1.0-eps)*probs
+            
             valids = self.game.getValidMoves(canonicalBoard, curPlayer)
             self.Ps[s] = probs*valids      # masking invalid moves
             sum_Ps_s = np.sum(self.Ps[s])

@@ -102,5 +102,5 @@ def save_act_model(g):
 if __name__ == "__main__":
     os.environ["CUDA_VISIBLE_DEVICES"] = "1,2"
     g = GobangGame(col=8, row=4, nir=7, defender=-1)
-    train_from_scratch(g, (0,5))
-    #save_act_model(g)
+    #train_from_scratch(g, (0,5))
+    save_act_model(g)

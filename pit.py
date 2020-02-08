@@ -152,32 +152,17 @@ if __name__=="__main__":
     n1 = NNet(g)
     n1.load_checkpoint('./temp/','best.pth.tar')
 
-    args1 = dotdict({'numMCTSSims': 400, 'cpuct':3.5, 'evaluationDepth':1, 'multiGPU': args.multiGPU, 'setGPU':args.setGPU,})
+    args1 = dotdict({'numMCTSSims': 400, 'cpuct':3.5, 'evaluationDepth':1, 'multiGPU': args.multiGPU, 'setGPU':args.setGPU,'alpha':0.3,'epsilon':0.25,})
     mcts1 = MCTS(g, n1, args1, lambdaHeur=0.1)
     n1p = lambda b, p: np.argmax(mcts1.getActionProb(b, p, temp=0))
 
     # improved nnet player
     n2 = NNet(g)
     n2.load_checkpoint('./temp/','best.pth.tar')
-    args2 = dotdict({'numMCTSSims':1000, 'cpuct':0.1, 'multiGPU':True})
+    args2 = dotdict({'numMCTSSims':1000, 'cpuct':0.1, 'multiGPU':True,'alpha':0.3,'epsilon':0.25,})
     mcts2 = MCTS(g, n2, args2, lambdaHeur=1.0)
     n2p =  lambda b, p: np.argmax(mcts2.getActionProb(b, p, temp=0))
 
-    # Heur+MCTS
-    all1 = {}
-    for i in [30,40,50]:
-      args0 = dotdict({'numMCTSSims':i , 'cpuct':1.0, 'multiGPU':True})
-      mcts0 = MCTS(g, n2, args0, lambdaHeur=1.0)
-      player = lambda b, p: np.argmax(mcts0.getActionProb(b, p, temp=0))
-      all1["Heur-Sim{}".format(i)]=player
-
-    # Heur+MCTS
-    all2 = {}
-    for i in [0.1, 0.5, 1.0, 2.0]:
-      args0 = dotdict({'numMCTSSims':50 , 'cpuct':i, 'multiGPU':True})
-      mcts0 = MCTS(g, n2, args0, lambdaHeur=1.0)
-      player = lambda b, p: np.argmax(mcts0.getActionProb(b, p, temp=0))
-      all2["Heur-Cpuct{}".format(i)]=player
       
     all = {
         'Random': rp,
@@ -190,8 +175,8 @@ if __name__=="__main__":
         arena = Arena.Arena(policyPlayer, hp, g, display=display)
         print(arena.playGames(4, verbose=True))
     elif modeargs.mode == 'one2one':
-        arena = Arena.Arena(n1p, heuristic,  g, display=display)
-        print(arena.playGames(20, verbose=True))
+        arena = Arena.Arena(policyPlayer, heuristic,  g, display=display)
+        print(arena.playGames(100, verbose=True))
     elif modeargs.mode == 'one2all':
         results = []
         y = []

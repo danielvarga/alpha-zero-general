@@ -11,13 +11,13 @@ Before using multiprocessing, please check 2 things before use this script.
 args = dotdict({
     'displaybar': True,
     'multiCPU': True,
-    'numIters': 5,
+    'numIters': 10,
     'numEps': 100,
     'tempThreshold': 16,
     'updateThreshold': 0.51,
     'maxlenOfQueue': 320000,
-    'numMCTSSims': 500,
-    'cpuct': 3.0,
+    'numMCTSSims': 400,
+    'cpuct': 2.0,
     'multiGPU': False,
     'setGPU': '0',
     # The total number of games when self-playing is:
@@ -35,6 +35,8 @@ args = dotdict({
     # Keep just the last N step of training, 0 if train from all steps
     'learnFromEnd':0,
     'evaluationDepth':1,
+    'alpha':0.2,
+    'epsilon':0.25,
 })
 
 if __name__=="__main__":
