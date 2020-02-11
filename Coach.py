@@ -30,13 +30,8 @@ class MyLogger:
 
 def AsyncSelfPlay(game,args,iter_num,bar):
     #set gpu
-    if(args.multiGPU):
-        if(iter_num%2==0):
-            os.environ["CUDA_VISIBLE_DEVICES"] = "1"
-        else:
-            os.environ["CUDA_VISIBLE_DEVICES"] = "2"
-    else:
-        os.environ["CUDA_VISIBLE_DEVICES"] = args.setGPU
+    gpus = args.setGPU.split(',')
+    os.environ["CUDA_VISIBLE_DEVICES"] = gpus[iter_num%len(gpus)]
 
     #set gpu memory grow
     config = tf.ConfigProto()  
@@ -113,7 +108,8 @@ def AsyncSelfPlay(game,args,iter_num,bar):
 
 def AsyncTrainNetwork(game,args,trainhistory):
     #set gpu
-    os.environ["CUDA_VISIBLE_DEVICES"] = args.setGPU
+    gpus = args.setGPU.split(',')
+    os.environ["CUDA_VISIBLE_DEVICES"] = gpus[0]
     #create network for training
     nnet = nn(game, args.displaybar)
     try:
@@ -170,13 +166,8 @@ def AsyncAgainst(game,args,iter_num,bar):
         bar.next()
 
     #set gpu
-    if(args.multiGPU):
-        if(iter_num%2==0):
-            os.environ["CUDA_VISIBLE_DEVICES"] = "1"
-        else:
-            os.environ["CUDA_VISIBLE_DEVICES"] = "2"
-    else:
-        os.environ["CUDA_VISIBLE_DEVICES"] = args.setGPU
+    gpus = args.setGPU.split(',')
+    os.environ["CUDA_VISIBLE_DEVICES"] = gpus[iter_num%len(gpus)]
 
     #set gpu memory grow
     config = tf.ConfigProto()
@@ -209,8 +200,8 @@ def AsyncAgainst(game,args,iter_num,bar):
 
 def CheckResultAndSaveNetwork(pwins,nwins,draws,game,args,iter_num):
     #set gpu
-    os.environ["CUDA_VISIBLE_DEVICES"] = args.setGPU
-
+    gpus = args.setGPU.split(',')
+    os.environ["CUDA_VISIBLE_DEVICES"] = gpus[iter_num%len(gpus)]
 
     if float(nwins)/(pwins+nwins) > args.updateThreshold or (
             nwins==pwins and draws > args.updateThreshold):
@@ -227,14 +218,9 @@ def CheckResultAndSaveNetwork(pwins,nwins,draws,game,args,iter_num):
 def play_games(game, args, processID, enemy):
     np.random.seed(processID)
     #set gpu
-    if(args.multiGPU):
-        if(iter_num%2==0):
-            os.environ["CUDA_VISIBLE_DEVICES"] = "1"
-        else:
-            os.environ["CUDA_VISIBLE_DEVICES"] = "2"
-    else:
-        os.environ["CUDA_VISIBLE_DEVICES"] = args.setGPU
-
+    gpus = args.setGPU.split(',')
+    os.environ["CUDA_VISIBLE_DEVICES"] = gpus[processID%len(gpus)]
+    
     #set gpu memory grow
     config = tf.ConfigProto()
     config.gpu_options.allow_growth=True  
@@ -277,14 +263,9 @@ def run_arena_parallel(arena, args):
     return np.sum(res2, axis=0)[:2]
     
 def logCurrentCapabilities(game, iter_num, args):
-    if(args.multiGPU):
-        if(iter_num%2==0):
-            os.environ["CUDA_VISIBLE_DEVICES"] = "1"
-        else:
-            os.environ["CUDA_VISIBLE_DEVICES"] = "2"
-    else:
-        os.environ["CUDA_VISIBLE_DEVICES"] = args.setGPU
-
+    gpus = args.setGPU.split(',')
+    os.environ["CUDA_VISIBLE_DEVICES"] = gpus[iter_num%len(gpus)]
+    
     # improved nnet player
     n2 = nn(game)
     n2.load_checkpoint('./temp/','best.pth.tar')
@@ -408,9 +389,9 @@ class Coach():
         """
         gamesNum = self.args.numSelfPlayProcess*self.args.numPerProcessSelfPlay
         MyLogger.info("============== New Run ==============")
-        MyLogger.info("sims: {} cpuct: {} gamesNum: {} coeff: {} evalDepth: {} alpha: {}".format(
+        MyLogger.info("sims: {} cpuct: {} gamesNum: {} coeff: {} evalDepth: {} alpha: {} eps: {}".format(
             self.args.numMCTSSims, self.args.cpuct, gamesNum,
-            self.args.coeff, self.args.evaluationDepth, self.args.alpha))
+            self.args.coeff, self.args.evaluationDepth, self.args.alpha, self.args.epsilon))
         for i in range(1, self.args.numIters+1):
             print('------ITER ' + str(i) + '------')
             iterationTrainExamples = deque([], maxlen=self.args.maxlenOfQueue)
