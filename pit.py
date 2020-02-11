@@ -96,6 +96,7 @@ if __name__=="__main__":
 
     parser = argparse.ArgumentParser(description='Struggle your Models with each other')
     parser.add_argument('-mode', dest = 'mode', help='Choose the mode: tournament, human, one2one')
+    parser.add_argument('-gpu', dest = 'gpu', help='Select a free GPU')
     modeargs = parser.parse_args()
 
     args = dotdict({
@@ -138,7 +139,7 @@ if __name__=="__main__":
 
 
     g = GobangGame(col=12, row=4, nir=7, defender=-1)
-
+    os.environ['TF_CPP_MIN_LOG_LEVEL'] = modeargs.gpu
     # parallel version
     #ParallelPlay(g)
 

@@ -16,7 +16,7 @@ args = dotdict({
     'tempThreshold': 24,
     'updateThreshold': 0.51,
     'maxlenOfQueue': 320000,
-    'numMCTSSims': 50,
+    'numMCTSSims': 500,
     'cpuct': 2.0,
     'multiGPU': True,
     'setGPU': '0,1,2',
