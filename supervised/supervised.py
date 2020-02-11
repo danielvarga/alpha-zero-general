@@ -139,9 +139,3 @@ model.compile(optimizer=optimizer,
               metrics=['categorical_accuracy'])
 
 model.fit(train_xs, train_ys, epochs=EPOCHS, batch_size=BATCH_SIZE, validation_data=(test_xs, test_ys))
-
-
-# test_loss, test_acc = model.evaluate(test_xs,  test_ys, verbose=2)
-
-print('\nTest loss:', test_loss)
-print('\nTest accuracy:', test_acc)
