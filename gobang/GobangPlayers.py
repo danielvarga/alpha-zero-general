@@ -35,6 +35,9 @@ class Heuristic():
         if(curPlayer != 0):
             mtx = self.get_field_stregth_mtx(board, 1)
             probs = np.array(mtx).flatten()
+            max = np.max(probs)
+            probs[probs<max]=0
+            probs /= np.sum(probs)
             a = np.random.choice(range(len(probs)), p = probs)
             return a
 
@@ -80,7 +83,7 @@ class Heuristic():
                 elif(board[x][y]==0):
                     emptyNum += 1
             if(enemyLess):
-                sum += 2.7**(-emptyNum)
+                sum += 3.2**(-emptyNum)
         return sum
              
     def greedy(self, board):

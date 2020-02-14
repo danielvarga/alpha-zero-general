@@ -228,7 +228,7 @@ def play_games(game, args, processID, enemy):
 
     
     # Players:
-    heuristic = Heuristic(game).play
+    heuristic = Heuristic(game).random_play
     policy = PolicyPlayer(game).play
     rp = RandomPlayer(game).play
 
@@ -274,7 +274,7 @@ def logCurrentCapabilities(game, iter_num, args):
     n2p =  lambda b, p: np.argmax(mcts2.getActionProb(b, p, temp=0))
 
     # Heuristic player:
-    heuristic = Heuristic(game).play
+    heuristic = Heuristic(game).random_play
 
     # Random Player:
     rp = RandomPlayer(game).play
