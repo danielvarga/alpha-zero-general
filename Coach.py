@@ -75,10 +75,10 @@ def AsyncSelfPlay(game,args,iter_num,bar):
             action = np.random.choice(len(pi), p=pi)
             mtx = mcts.heuristic.get_field_stregth_mtx(board, 1)
             heuristic_components = mcts.heuristic.get_x_line_mtx(board, 1)
-            shape = list(np.shape(board))+[1]
+            shape = list(board.shape)+[1]
             trainExamples.append([np.concatenate([np.reshape(board,shape),
-                                                   np.reshape(mtx, shape),
-                                                   heuristic_components], axis=2),
+                                                  np.reshape(mtx, shape),
+                                                  heuristic_components], axis=2),
                                   curPlayer, pi, None])
             
             #action = np.random.choice(len(pi), p=pi)
@@ -94,7 +94,7 @@ def AsyncSelfPlay(game,args,iter_num,bar):
                     print("\n",r, curPlayer, "\n")
                     display(board, end = True)
                     np.set_printoptions(precision=5)
-                    print(np.resize(pi[:-1],np.shape(board) ).transpose())
+                    print(np.resize(pi[:-1],board.shape()).transpose())
                     print("")
 
                 for i,x in enumerate(reversed(trainExamples[args.learnFromEnd:])):

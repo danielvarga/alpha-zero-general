@@ -16,7 +16,7 @@ DROPOUT_RATE=0
 BATCHNORM=True
 BATCH_SIZE=128
 SPLIT=0.2
-CACHE=False
+CACHE=True
 REMOVE_DUPLICATES=False
 DATAFILE="/home/doma945/amoba_teleport/temp"
 # DATAFILE="amoba_samples/temp"
@@ -65,17 +65,20 @@ def preprocess_data(cache=True):
     if cache and os.path.isfile(cacheFile):
         npz = np.load(cacheFile)
         xs = npz['xs']
-        ys = npz['ys']
+        ps = npz['ps']
+        vs = npz['vs']
     else: 
         trainExamples = load_history()
         xs = []
-        ys = []
+        ps = []
+        vs = []
         for (allBoard, curPlayer, pi, action) in trainExamples:
-            # TODO understand action is reward for value training
             xs.append(allBoard)
-            ys.append(pi)
+            ps.append(pi)
+            vs.append(action)
         xs = np.array(xs)
-        ys = np.array(ys)
+        ps = np.array(ps)
+        vs = np.array(vs)
 
         board = np.expand_dims(xs[:,:,:,0], axis = 3)
         heur_channels = xs[:,:,:,1:]
@@ -84,19 +87,20 @@ def preprocess_data(cache=True):
         player_channel = curPlayer * np.ones_like(board)
         xs = np.concatenate([white_board, black_board, heur_channels, player_channel], axis=3)
 
-        np.savez(cacheFile, xs=xs, ys=ys)
+        np.savez(cacheFile, xs=xs, ps=ps, vs=vs)
 
     print("Input shape: ", xs.shape)
-    print("Target shape: ", ys.shape)
-    if REMOVE_DUPLICATES:
-        xs, ys = remove_duplicates(xs, ys)
-    return (xs, ys)
+    print("Target policy shape: ", ps.shape)
+    print("Target value shape: ", vs.shape)
+    # if REMOVE_DUPLICATES:
+    #     xs, ys = remove_duplicates(xs, ys)
+    return (xs, ps, vs)
 
-(xs, ys) = preprocess_data(cache=CACHE)
+(xs, ps, vs) = preprocess_data(cache=CACHE)
 
 input_shape = xs.shape[1:]
-output_shape = ys.shape[1:]
-output_count = np.prod(output_shape)
+policy_shape = ps.shape[1:]
+pi_output_count = np.prod(policy_shape)
 
 # model = keras.Sequential([
 #     keras.layers.Flatten(input_shape=input_shape),
@@ -142,17 +146,32 @@ outputs = layers.Dense(512)(outputs)
 outputs = layers.Dropout(DROPOUT_RATE)(outputs)
 if BATCHNORM: outputs = tf.keras.layers.BatchNormalization()(outputs)
 outputs = layers.Activation(tf.nn.relu)(outputs)
-pi = layers.Dense(output_count)(outputs)
-prob = layers.Softmax()(pi)
+pi = layers.Dense(pi_output_count, name="policy")(outputs)
+v0 = layers.Dense(1)(outputs)
+v = layers.Activation(tf.math.tanh, name="value")(v0)
 
-model = keras.Model(inputs=inputs, outputs=pi)
-loss = keras.losses.CategoricalCrossentropy(from_logits=True)
+model = keras.Model(inputs=inputs, outputs=(pi, v))
+loss = {
+    "policy": keras.losses.CategoricalCrossentropy(from_logits=True),
+    "value": keras.losses.MeanSquaredError(),
+}
+loss_weights = {
+    "policy": 1,
+    "value": 10,
+}
+metrics = {
+    "policy": 'categorical_accuracy',
+    "value": 'mse',
+}
 
+# prob = layers.Softmax()(pi)
 # model = keras.Model(inputs=inputs, outputs=prob)
 # loss = keras.losses.MeanSquaredError()
 
 model.compile(optimizer="adam",
               loss=loss,
-              metrics=['categorical_accuracy'])
+              loss_weights=loss_weights,
+              metrics=metrics
+)
 
-model.fit(xs, ys, epochs=EPOCHS, batch_size=BATCH_SIZE, validation_split=SPLIT)
+model.fit(xs, (ps, vs), epochs=EPOCHS, batch_size=BATCH_SIZE, validation_split=SPLIT)

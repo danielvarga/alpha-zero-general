@@ -25,7 +25,7 @@ class MCTS():
         self.lambdaHeur = lambdaHeur
         self.alphas = [args.alpha]*game.getActionSize()
         
-    def getActionProb(self, canonicalBoard, curPlayer, temp=1, debug=False):
+    def getActionProb(self, board, curPlayer, temp=1, debug=False):
         """
         This function performs numMCTSSims simulations of MCTS starting from
         canonicalBoard.
@@ -37,10 +37,11 @@ class MCTS():
         self.endNum = 0
         self.win = 0
         for i in range(self.args.numMCTSSims):
-            self.search(canonicalBoard, curPlayer, -1)
+            tmp_board = np.copy(board)
+            self.search(tmp_board, curPlayer, -1)
 
         #print(self.endNum, self.win, self.args.numMCTSSims)
-        s = self.game.stringRepresentation(canonicalBoard)
+        s = board.tobytes()
         counts = [self.Nsa[(s,a)] if (s,a) in self.Nsa else 0 for a in range(self.game.getActionSize())]
         #counts = np.array([self.Qsa[(s,a)] if (s,a) in self.Qsa else 0 for a in range(self.game.getActionSize())])
         #counts = [1.0+x[0] if isinstance(x,list) else 1.0+x for x in counts]
@@ -56,13 +57,13 @@ class MCTS():
 
         counts = [x**(1./temp) for x in counts]
         probs = [x/float(sum(counts)) for x in counts]
-        print(probs, np.sum(probs))
+        # print(probs, np.sum(probs))
         if debug:
             return probs, counts
         else:
             return probs
 
-    def search(self, canonicalBoard, curPlayer, action):
+    def search(self, raw_board, curPlayer, action):
         """
         This function performs one iteration of MCTS. It is recursively called
         till a leaf node is found. The action chosen at each node is one that
@@ -82,10 +83,10 @@ class MCTS():
             v: the negative of the value of the current canonicalBoard
         """
 
-        s = self.game.stringRepresentation(canonicalBoard)
+        s = raw_board.tobytes()
         #display(canonicalBoard, end = True)
         if s not in self.Es:
-            self.Es[s] = self.game.getGameEnded(canonicalBoard, curPlayer, action)
+            self.Es[s] = self.game.getGameEnded(raw_board, curPlayer, action)
         if self.Es[s]!=0:
             self.endNum+=1
             self.win += (curPlayer == 1)
@@ -94,8 +95,8 @@ class MCTS():
 
         if s not in self.Ps:
             # leaf node
-            mtx = self.heuristic.get_field_stregth_mtx(canonicalBoard, 1)
-            heuristic_components = self.heuristic.get_x_line_mtx(canonicalBoard, 1)
+            mtx = self.heuristic.get_field_stregth_mtx(raw_board, 1)
+            heuristic_components = self.heuristic.get_x_line_mtx(raw_board, 1)
 
             # If next step is a obligatory
             oneStepWin = (heuristic_components[...,0]>0).any()
@@ -115,7 +116,7 @@ class MCTS():
                 #display(canonicalBoard, end = True)
                 #print("Best step:", a)
                 
-                next_s, next_player = self.game.getNextState(canonicalBoard, curPlayer, a)
+                next_s, next_player = self.game.getNextState(raw_board, curPlayer, a)
                 v = self.search(next_s, next_player, a)
                 self.Qsa[(s,a)] = v
                 self.Nsa[(s,a)] = 1
@@ -123,12 +124,12 @@ class MCTS():
                 return -v
             
             elif self.args.evaluationDepth > 1:
-                probs, v = self.evalSituation(canonicalBoard, curPlayer, action)
+                probs, v = self.evalSituation(raw_board, curPlayer, action)
                 #print("Value after {} eval: {}".format(self.args.evaluationDepth,-v))
             else:
-                shape = list(np.shape(canonicalBoard))+[1]
+                shape = list(raw_board.shape)+[1]
                 probs, v, logits, exp_val, sum_val, valids2= self.nnet.predict(
-                    np.concatenate([np.reshape(canonicalBoard,shape),
+                    np.concatenate([np.reshape(raw_board,shape),
                                     np.reshape(mtx, shape),
                                     heuristic_components], axis=2),curPlayer)
 
@@ -138,14 +139,14 @@ class MCTS():
             noise = np.random.dirichlet(self.alphas)
             probs = eps*noise+(1.0-eps)*probs
             
-            valids = self.game.getValidMoves(canonicalBoard, curPlayer)
+            valids = self.game.getValidMoves(raw_board, curPlayer)
             self.Ps[s] = probs*valids      # masking invalid moves
             sum_Ps_s = np.sum(self.Ps[s])
             if sum_Ps_s > 0:
                 self.Ps[s] /= sum_Ps_s    # renormalize
             else:
                 #probs2, v2 = self.nnet.predict(canonicalBoard, -curPlayer)
-                display(canonicalBoard, end = True)
+                display(raw_board, end = True)
                 print("exp: ", exp_val)
                 print("sum: ", sum_val)
                 print("logits: ", logits)
@@ -185,7 +186,7 @@ class MCTS():
                     best_act = a
                     
         a = best_act
-        next_s, next_player = self.game.getNextState(canonicalBoard, curPlayer, a)
+        next_s, next_player = self.game.getNextState(raw_board, curPlayer, a)
 
         v = self.search(next_s, next_player, a)
         #Heuristic: v = self.Ps[s][a], cpuct = 0.0, u = self.Ps[s][a]
@@ -201,11 +202,11 @@ class MCTS():
         self.Ns[s] += 1
         return -v
     
-    def evalSituation(self, canonicalBoard, curPlayer, action):
+    def evalSituation(self, raw_board, curPlayer, action):
         # TODO:
         #     - speedup with Es, Ps, Vs
         #     - disadvantage???
-        next_s, next_player = canonicalBoard, curPlayer
+        next_s, next_player = raw_board, curPlayer
         a = action
         i=0
         probs0 = None

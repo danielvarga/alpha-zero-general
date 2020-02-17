@@ -10,24 +10,24 @@ Before using multiprocessing, please check 2 things before use this script.
 """
 args = dotdict({
     'displaybar': True,
-    'multiCPU': False,
+    'multiCPU': True,
     'numIters': 3,
     'numEps': 100,
     'tempThreshold': 24,
     'updateThreshold': 0.51,
     'maxlenOfQueue': 320000,
-    'numMCTSSims': 500,
+    'numMCTSSims': 50,
     'cpuct': 2.0,
     'multiGPU': True,
-    'setGPU': '0,1,2',
+    'setGPU': '0,1',
     # The total number of games when self-playing is:
     # Total = numSelfPlayProcess * numPerProcessSelfPlay
     'numSelfPlayProcess': 20,
     'numPerProcessSelfPlay': 30,
     # The total number of games when against-playing is:
     # Total = numAgainstPlayProcess * numPerProcessAgainst
-    'numAgainstPlayProcess': 10,
-    'numPerProcessAgainst': 10,
+    'numAgainstPlayProcess': 30,
+    'numPerProcessAgainst': 30,
     'checkpoint': './temp/',
     'numItersForTrainExamplesHistory': 5,
     'lambdaHeur':0.0,
