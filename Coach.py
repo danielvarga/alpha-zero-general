@@ -79,7 +79,7 @@ def AsyncSelfPlay(game,args,iter_num,bar):
             trainExamples.append([np.concatenate([np.reshape(board,shape),
                                                    np.reshape(mtx, shape),
                                                    heuristic_components], axis=2),
-                                  curPlayer, pi, action])
+                                  curPlayer, pi, None])
             
             #action = np.random.choice(len(pi), p=pi)
             board, curPlayer = game.getNextState(board, curPlayer, action)

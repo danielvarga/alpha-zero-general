@@ -10,7 +10,7 @@ Before using multiprocessing, please check 2 things before use this script.
 """
 args = dotdict({
     'displaybar': True,
-    'multiCPU': True,
+    'multiCPU': False,
     'numIters': 3,
     'numEps': 100,
     'tempThreshold': 24,
@@ -29,7 +29,7 @@ args = dotdict({
     'numAgainstPlayProcess': 10,
     'numPerProcessAgainst': 10,
     'checkpoint': './temp/',
-    'numItersForTrainExamplesHistory': 7,
+    'numItersForTrainExamplesHistory': 5,
     'lambdaHeur':0.0,
     'coeff':0.9,
     # Keep just the last N step of training, 0 if train from all steps
