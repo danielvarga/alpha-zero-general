@@ -191,8 +191,8 @@ def AsyncAgainst(game,args,iter_num,bar):
     pmcts = MCTS(game, pnet, args, args.lambdaHeur)
     nmcts = MCTS(game, nnet, args, args.lambdaHeur)
 
-    arena = Arena(lambda b, p: np.argmax(pmcts.getActionProb(canonicalBoard=b, curPlayer=p, temp=1)),
-                  lambda b, p: np.argmax(nmcts.getActionProb(canonicalBoard=b, curPlayer=p, temp=1)),
+    arena = Arena(lambda b, p: np.argmax(pmcts.getActionProb(board=b, curPlayer=p, temp=1)),
+                  lambda b, p: np.argmax(nmcts.getActionProb(board=b, curPlayer=p, temp=1)),
                   game, displaybar=args.displaybar)
     # each against process play the number of numPerProcessAgainst games.
     pwins, nwins, draws = arena.playGames(args.numPerProcessAgainst)
@@ -387,12 +387,14 @@ class Coach():
         It then pits the new neural network against the old one and accepts it
         only if it wins >= updateThreshold fraction of games.
         """
+        import time
         gamesNum = self.args.numSelfPlayProcess*self.args.numPerProcessSelfPlay
         MyLogger.info("============== New Run ==============")
         MyLogger.info("sims: {} cpuct: {} gamesNum: {} coeff: {} evalDepth: {} alpha: {} eps: {}".format(
             self.args.numMCTSSims, self.args.cpuct, gamesNum,
             self.args.coeff, self.args.evaluationDepth, self.args.alpha, self.args.epsilon))
         for i in range(1, self.args.numIters+1):
+            start = time.time()
             print('------ITER ' + str(i) + '------')
             iterationTrainExamples = deque([], maxlen=self.args.maxlenOfQueue)
             temp = self.parallel_self_play()
@@ -413,3 +415,6 @@ class Coach():
             # Reduce influence of lambdaHeur
             #self.args.lambdaHeur*=0.95
             #self.args.cpuct*=0.95
+            end = time.time()
+            diff =(end - start)
+            print(diff)

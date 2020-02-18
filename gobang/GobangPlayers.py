@@ -61,6 +61,11 @@ class Heuristic():
                     return False
 
         return True
+    
+    def no_free_line2(self, board):
+        enemy = np.logical_and(self.lineMatrix, board==-1)
+        bad_lines = np.any(enemy, axis = (1,2))
+        return np.all(bad_lines)
         
     def has_lost(self, board, player, action):
         x = action//self.N

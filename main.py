@@ -19,15 +19,15 @@ args = dotdict({
     'numMCTSSims': 50,
     'cpuct': 2.0,
     'multiGPU': True,
-    'setGPU': '0,1',
+    'setGPU': '0,1,2',
     # The total number of games when self-playing is:
     # Total = numSelfPlayProcess * numPerProcessSelfPlay
     'numSelfPlayProcess': 20,
     'numPerProcessSelfPlay': 30,
     # The total number of games when against-playing is:
     # Total = numAgainstPlayProcess * numPerProcessAgainst
-    'numAgainstPlayProcess': 30,
-    'numPerProcessAgainst': 30,
+    'numAgainstPlayProcess': 10,
+    'numPerProcessAgainst': 10,
     'checkpoint': './temp/',
     'numItersForTrainExamplesHistory': 5,
     'lambdaHeur':0.0,
