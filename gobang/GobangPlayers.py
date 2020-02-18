@@ -18,6 +18,9 @@ class Heuristic():
         self.game = game
         self.N = game.row
         self.M = game.col
+        self.lineMatrix = None
+        self.lineMatrixInField = {}
+        self.lineSize = None
         self.generate_lines()
 
     def play(self, board, curPlayer):
@@ -71,8 +74,17 @@ class Heuristic():
             if(is_full):
                 return True
         return False
+    
+    def has_lost2(self, board, player, action):
+        x = action//self.N
+        y = action % self.N
+
+        active_lines = np.sum(np.multiply(self.lineMatrix, board), axis = (1,2))
+        return  np.any(np.equal(active_lines , self.lineSize))
+
     def line_sum(self, board):
         sum = 0.0
+        lineSize = []
         for line in self.Lines:
             enemyLess = True
             emptyNum = 0
@@ -83,9 +95,22 @@ class Heuristic():
                 elif(board[x][y]==0):
                     emptyNum += 1
             if(enemyLess):
-                sum += 3.2**(-emptyNum)
+                #sum += 3.2**(-emptyNum)
+                sum += 2.0**(-emptyNum)
+            lineSize.append(enemyLess*emptyNum)
         return sum
-             
+    
+    def line_sum2(self, board):
+        enemy = np.logical_and(self.lineMatrix, board==-1)
+        bad_lines = np.any(enemy, axis = (1,2))
+        active_lines = np.sum(np.multiply(self.lineMatrix, board), axis = (1,2))
+
+        lineSize = (self.lineSize-active_lines)
+        lineSize = 1.0/np.exp2(lineSize.astype(float))
+        lineSize *= (1-bad_lines)
+        
+        return np.sum(lineSize)
+
     def greedy(self, board):
         for x in range(self.M):
             for y in range(self.N):
@@ -200,12 +225,25 @@ class Heuristic():
 
 
         # Geather the lines in each Field
-        for line in self.Lines:
+        self.lineMatrix = np.zeros((len(self.Lines), self.M, self.N))
+        for i,line in enumerate(self.Lines):
             for x,y in line:
                 if (x,y) not in self.pointStrengthHeuristics:
                     self.pointStrengthHeuristics[(x,y)]=[line]
                 else:
                     self.pointStrengthHeuristics[(x,y)].append(line)
+                self.lineMatrix[i][x][y]=1
+
+        for (x,y) in self.pointStrengthHeuristics:
+            init_mtx = np.zeros((len(self.pointStrengthHeuristics[(x,y)]), self.M, self.N))
+            
+            for i,line in enumerate(self.pointStrengthHeuristics[(x,y)]):
+                for (x0, y0) in line:
+                    init_mtx[i][x0][y0]=1
+            
+            self.lineMatrixInField[(x,y)] = init_mtx
+
+        self.lineSize = np.sum((self.lineMatrix), axis = (1,2))
 
 class HumanGobangPlayer():
     def __init__(self, game):
