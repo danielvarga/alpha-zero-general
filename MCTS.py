@@ -24,6 +24,7 @@ class MCTS():
         self.heuristic = Heuristic(game)
         self.lambdaHeur = lambdaHeur
         self.alphas = [args.alpha]*game.getActionSize()
+        self.action_size = game.getActionSize()
         
     def getActionProb(self, board, curPlayer, temp=1, debug=False):
         """
@@ -36,15 +37,22 @@ class MCTS():
         """
         self.endNum = 0
         self.win = 0
-        for i in range(self.args.numMCTSSims):
-            tmp_board = np.copy(board)
-            self.search(tmp_board, curPlayer, -1)
 
-        #print(self.endNum, self.win, self.args.numMCTSSims)
-        s = board.tobytes()
-        counts = [self.Nsa[(s,a)] if (s,a) in self.Nsa else 0 for a in range(self.game.getActionSize())]
-        #counts = np.array([self.Qsa[(s,a)] if (s,a) in self.Qsa else 0 for a in range(self.game.getActionSize())])
-        #counts = [1.0+x[0] if isinstance(x,list) else 1.0+x for x in counts]
+        if self.args.fast_eval:
+            for i in range(self.args.numMCTSSims):
+                tmp_board = np.copy(board)
+                self.fast_search(tmp_board, curPlayer, -1)
+
+                s = board.tobytes()
+                counts = self.Nsa[s]
+        else:
+            for i in range(self.args.numMCTSSims):
+                tmp_board = np.copy(board)
+                self.search(tmp_board, curPlayer, -1)
+
+                s = board.tobytes()
+                counts = [self.Nsa[(s,a)] if (s,a) in self.Nsa else 0 for a in range(self.game.getActionSize())]
+                #counts = np.array([self.Qsa[(s,a)] if (s,a) in self.Qsa else 0 for a in range(self.game.getActionSize())])
         
         if temp==0:
             bestA = np.argmax(counts)
@@ -57,12 +65,66 @@ class MCTS():
 
         counts = [x**(1./temp) for x in counts]
         probs = [x/float(sum(counts)) for x in counts]
-        # print(probs, np.sum(probs))
         if debug:
             return probs, counts
         else:
             return probs
 
+    def fast_search(self, raw_board, curPlayer, action):
+        s = raw_board.tobytes()
+        
+        if s not in self.Es:
+            self.Es[s] = self.game.getGameEnded(raw_board, curPlayer, action)
+        if self.Es[s]!=0:
+            self.endNum+=1
+            self.win += (curPlayer == 1)
+            # terminal node
+            return -self.Es[s]
+
+        if s not in self.Ps:
+            # leaf node
+            # === get v by simulation ===:
+            #v = self.fast_search(raw_board, curPlayer, action)
+            valids = self.game.getValidMoves(raw_board, curPlayer)
+            #print("val",valids)
+            self.Ps[s] = valids/np.sum(valids)
+
+            self.Vs[s] = valids
+            self.Ns[s] = 0
+            self.Nsa[s] = np.zeros(self.action_size)
+            self.Qsa[s] = np.zeros(self.action_size)
+            # TODO:
+            #    --> fast search here???
+            #    --> choose action radom/heuristic ...
+            #    --> 
+            #return -v
+        #else:
+            #print(self.Ps[s])
+            #print(raw_board)
+            
+        valids = self.Vs[s]
+
+        q=self.Qsa[s]
+        p=self.Ps[s]
+        n=self.Ns[s]
+        a=self.Nsa[s]
+        u = self.Qsa[s]+self.args.cpuct*self.Ps[s]*math.sqrt(self.Ns[s]+EPS)/(1+self.Nsa[s])
+        a = np.argmax((u+2)*valids);
+
+        #print(raw_board)
+        #print(u, q, p, n)
+        #print(a, valids)
+        
+        next_s, next_player = self.game.getNextState(raw_board, curPlayer, a)
+
+        v = self.fast_search(next_s, next_player, a)
+        Nsa = self.Nsa[s][a]
+        self.Qsa[s][a] = (Nsa*self.Qsa[s][a] + v)/(Nsa+1)
+        self.Nsa[s][a] += 1
+
+        self.Ns[s] += 1
+        return -v
+        
     def search(self, raw_board, curPlayer, action):
         """
         This function performs one iteration of MCTS. It is recursively called

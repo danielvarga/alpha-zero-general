@@ -16,8 +16,8 @@ args = dotdict({
     'tempThreshold': 24,
     'updateThreshold': 0.51,
     'maxlenOfQueue': 320000,
-    'numMCTSSims': 200,
-    'cpuct': 2.0,
+    'numMCTSSims': 10000,
+    'cpuct': 1.0,
     'multiGPU': True,
     'setGPU': '0,1,2',
     # The total number of games when self-playing is:
@@ -38,6 +38,7 @@ args = dotdict({
     'alpha':0.4,
     'epsilon':0.1,
     'heur_val_eps':0.0,
+    'fast_eval':True,
 })
 
 if __name__=="__main__":
