@@ -94,6 +94,16 @@ class GobangGame(Game):
         """
         if(action < 0):
             return 0
+
+        #if self.heuristic.has_lost(board, -1, action) != self.heuristic.has_lost2(board, -1, action):
+        #    print(self.heuristic.has_lost2(board, -1, action))
+        #    print(board)
+        #    exit(1)
+        #if self.heuristic.no_free_line(board) != self.heuristic.no_free_line2(board):
+        #    print(board)
+        #    exit(1)
+        
+
         
         if self.heuristic.has_lost(board, -1, action):
            return player
@@ -209,7 +219,7 @@ class bcolors:
     UNDERLINE = '\033[4m'
 
 def display(board, end = False):
-    M,N = board.shape()[:2]
+    M,N = np.shape(board)[:2]
 
     print("\n"+" "*30)
     print("=== Gobang Game ===")

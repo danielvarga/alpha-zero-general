@@ -177,7 +177,7 @@ if __name__=="__main__":
         arena = Arena.Arena(policyPlayer, hp, g, display=display)
         print(arena.playGames(4, verbose=True))
     elif modeargs.mode == 'one2one':
-        arena = Arena.Arena(policyPlayer, heuristic_rand,  g, display=display)
+        arena = Arena.Arena(policyPlayer, heuristic,  g, display=display)
         print(arena.playGames(100, verbose=True))
     elif modeargs.mode == 'one2all':
         results = []

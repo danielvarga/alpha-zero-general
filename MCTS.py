@@ -98,24 +98,19 @@ class MCTS():
             mtx = self.heuristic.get_field_stregth_mtx(raw_board, 1)
             heuristic_components = self.heuristic.get_x_line_mtx(raw_board, 1)
 
-            # If next step is a obligatory
+            # === If next step is a obligatory ===
             oneStepWin = (heuristic_components[...,0]>0).any()
             twoStepWin = (heuristic_components[...,1]>1).any()
             if oneStepWin or twoStepWin:
                 # Move the only choice:
-                if oneStepWin:
-                    chanel = 0
-                else:
-                    chanel = 1
+                chanel = 0 if oneStepWin else 1
+                
                 a = np.argmax(heuristic_components[...,chanel].flatten())
                 onehot = np.zeros((self.game.getActionSize(),))
                 onehot[a] = 1
                 self.Vs[s]= onehot
                 self.Ns[s]=0
-                
-                #display(canonicalBoard, end = True)
-                #print("Best step:", a)
-                
+
                 next_s, next_player = self.game.getNextState(raw_board, curPlayer, a)
                 v = self.search(next_s, next_player, a)
                 self.Qsa[(s,a)] = v
@@ -125,6 +120,7 @@ class MCTS():
             
             elif self.args.evaluationDepth > 1:
                 probs, v = self.evalSituation(raw_board, curPlayer, action)
+                v = v[0]
                 #print("Value after {} eval: {}".format(self.args.evaluationDepth,-v))
             else:
                 shape = list(raw_board.shape)+[1]
@@ -133,29 +129,24 @@ class MCTS():
                                     np.reshape(mtx, shape),
                                     heuristic_components], axis=2),curPlayer)
 
-            v = v[0]
+                eps = self.args.heur_val_eps
+                board = np.copy(raw_board)
+                v_heur = self.get_heuristic_end(board, curPlayer, action)
+                v = np.clip( (1-eps)*v[0] + eps*v_heur , -1,1)
+
+            #v = v[0]
             # === Add Dirichlet noise to pi: ===
             eps = self.args.epsilon
             noise = np.random.dirichlet(self.alphas)
             probs = eps*noise+(1.0-eps)*probs
-            
+
+            # === Mask invalids ===
             valids = self.game.getValidMoves(raw_board, curPlayer)
             self.Ps[s] = probs*valids      # masking invalid moves
             sum_Ps_s = np.sum(self.Ps[s])
             if sum_Ps_s > 0:
                 self.Ps[s] /= sum_Ps_s    # renormalize
             else:
-                #probs2, v2 = self.nnet.predict(canonicalBoard, -curPlayer)
-                display(raw_board, end = True)
-                print("exp: ", exp_val)
-                print("sum: ", sum_val)
-                print("logits: ", logits)
-                print("probs: ", probs)
-                print("mtx: ", mtx)
-                print("valids: ", valids)
-                print("valids2: ", valids2)
-                # if all valid moves were masked make all valid moves equally probable
-                
                 # NB! All valid moves may be masked if either your NNet architecture
                 # is insufficient or you've get overfitting or something else.
                 # If you have got dozens or hundreds of these messages you should pay
@@ -201,6 +192,20 @@ class MCTS():
 
         self.Ns[s] += 1
         return -v
+
+    def get_heuristic_end(self, raw_board, curPlayer, action):
+        next_s, next_player = raw_board, curPlayer
+        a = action
+        while 1:
+            end = self.game.getGameEnded(next_s, next_player, a)
+            if end != 0:
+                return end
+            else:
+                a = self.heuristic.play(next_s, next_player)
+                next_s, next_player = self.game.getNextState(next_s, next_player, a)
+
+        print("You shouldn't be here")
+        return 1
     
     def evalSituation(self, raw_board, curPlayer, action):
         # TODO:

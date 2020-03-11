@@ -124,6 +124,43 @@ class Heuristic():
         print("Board is full!!!")
         exit()
 
+    # === NUMPY, fast version ===
+    def get_x_line_mtx_new(self, board, player):
+        mtx = np.zeros(shape = (self.M, self.N, 7))
+        field = (board!=0)
+
+        enemy = np.logical_and(self.lineMatrix, board==-1)
+        bad_lines = np.any(enemy, axis = (1,2))
+        active_lines = np.sum(np.multiply(self.lineMatrix, board), axis = (1,2))
+
+        lineSize = (self.lineSize-active_lines)
+        lineSize *= (1-bad_lines)
+
+        for layer in range(7):
+            act_layer = lineSize==(layer+1)
+            mtx[...,layer] = np.tensordot(act_layer.transpose(),self.lineMatrix, axes=([0],[0]))
+            mtx[...,layer] *= (1-field)
+        return mtx
+
+    # === NUMPY, fast version ===
+    def get_field_stregth_mtx_new(self, board, player):
+        enemy = np.logical_and(self.lineMatrix, board==-1)
+        bad_lines = np.any(enemy, axis = (1,2))
+        active_lines = np.sum(np.multiply(self.lineMatrix, board), axis = (1,2))
+
+        lineSize = (self.lineSize-active_lines)
+        lineSize = 1.0/np.exp2(lineSize.astype(float))
+        lineSize *= (1-bad_lines)
+
+        mtx = np.tensordot(lineSize,self.lineMatrix, axes=([0],[0]))
+        mtx*= (1-(board!=0).astype(int))
+
+        if np.max(mtx) == 0.0:
+            x,y = self.greedy(board)
+            mtx[x][y]=1.0
+        return mtx
+
+    # === OLD, slow version ===
     def get_x_line_mtx(self, board, player):
         mtx = np.zeros(shape = (self.M, self.N, 7))
         for key, lines in self.pointStrengthHeuristics.items():
@@ -143,7 +180,8 @@ class Heuristic():
                 if(enemyless):
                     mtx[x][y][emptynum-1] += 1
         return mtx
-    
+
+    # === OLD, slow version ===
     def get_field_stregth_mtx(self, board, player, verbose=False):
         mtx = np.zeros(shape = (self.M, self.N))
         for key, lines in self.pointStrengthHeuristics.items():
