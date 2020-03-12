@@ -138,7 +138,7 @@ if __name__=="__main__":
         print("Model 1 Win:",oneWon," Model 2 Win:",twoWon," Draw:",draws)
 
 
-    g = GobangGame(col=12, row=4, nir=7, defender=-1)
+    g = GobangGame(col=8, row=4, nir=7, defender=-1)
     os.environ['TF_CPP_MIN_LOG_LEVEL'] = modeargs.gpu
     # parallel version
     #ParallelPlay(g)
@@ -154,7 +154,7 @@ if __name__=="__main__":
     n1 = NNet(g)
     n1.load_checkpoint('./temp/','best.pth.tar')
 
-    args1 = dotdict({'numMCTSSims': 400, 'cpuct':3.5, 'evaluationDepth':1, 'multiGPU': args.multiGPU, 'setGPU':args.setGPU,'alpha':0.3,'epsilon':0.25,})
+    args1 = dotdict({'numMCTSSims': 5000, 'cpuct':1.0, 'evaluationDepth':1, 'multiGPU': args.multiGPU, 'setGPU':args.setGPU,'alpha':0.3,'epsilon':0.25,'fast_eval':True})
     mcts1 = MCTS(g, n1, args1, lambdaHeur=0.1)
     n1p = lambda b, p: np.argmax(mcts1.getActionProb(b, p, temp=0))
 
@@ -174,10 +174,10 @@ if __name__=="__main__":
     }
     
     if modeargs.mode == 'human':
-        arena = Arena.Arena(policyPlayer, hp, g, display=display)
+        arena = Arena.Arena(n1p, hp, g, display=display)
         print(arena.playGames(4, verbose=True))
     elif modeargs.mode == 'one2one':
-        arena = Arena.Arena(policyPlayer, heuristic,  g, display=display)
+        arena = Arena.Arena(n1p, heuristic,  g, display=display)
         print(arena.playGames(100, verbose=True))
     elif modeargs.mode == 'one2all':
         results = []
