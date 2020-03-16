@@ -143,7 +143,7 @@ class Heuristic():
         return mtx
 
     # === NUMPY, fast version ===
-    def get_field_stregth_mtx_new(self, board, player):
+    def get_field_stregth_mtx(self, board, player):
         enemy = np.logical_and(self.lineMatrix, board==-1)
         bad_lines = np.any(enemy, axis = (1,2))
         active_lines = np.sum(np.multiply(self.lineMatrix, board), axis = (1,2))
@@ -182,7 +182,7 @@ class Heuristic():
         return mtx
 
     # === OLD, slow version ===
-    def get_field_stregth_mtx(self, board, player, verbose=False):
+    def get_field_stregth_mtx_old(self, board, player, verbose=False):
         mtx = np.zeros(shape = (self.M, self.N))
         for key, lines in self.pointStrengthHeuristics.items():
             x,y = key

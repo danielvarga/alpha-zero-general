@@ -87,7 +87,11 @@ class MCTS():
             #v = self.fast_search(raw_board, curPlayer, action)
             valids = self.game.getValidMoves(raw_board, curPlayer)
             #print("val",valids)
-            self.Ps[s] = valids/np.sum(valids)
+            
+            mtx = self.heuristic.get_field_stregth_mtx(raw_board, 1)
+            self.Ps[s] = mtx.flatten()/np.sum(mtx)
+            
+            #self.Ps[s] = valids/np.sum(valids)
 
             self.Vs[s] = valids
             self.Ns[s] = 0
@@ -104,10 +108,6 @@ class MCTS():
             
         valids = self.Vs[s]
 
-        q=self.Qsa[s]
-        p=self.Ps[s]
-        n=self.Ns[s]
-        a=self.Nsa[s]
         u = self.Qsa[s]+self.args.cpuct*self.Ps[s]*math.sqrt(self.Ns[s]+EPS)/(1+self.Nsa[s])
         a = np.argmax((u+2)*valids);
 
