@@ -13,6 +13,9 @@ import multiprocessing
 from utils import *
 from pytorch_classification.utils import Bar, AverageMeter
 import matplotlib
+from pickle import Pickler, Unpickler
+
+
 """
 use this script to play any two agents against each other, or play manually with
 any agent.
@@ -40,6 +43,51 @@ def myheatmap(data, xlabels, ylabels):
   fig.savefig("heatmap.png")
   plt.show()
 
+def Async_Arena(iter_num, game, args):
+    #set gpu
+    gpus = args.setGPU.split(',')
+    os.environ["CUDA_VISIBLE_DEVICES"] = gpus[iter_num%len(gpus)]
+  
+    #set gpu memory grow
+    config = tf.ConfigProto()  
+    config.gpu_options.allow_growth=True  
+    sess = tf.Session(config=config)
+
+    # create separate seeds for each worker
+    np.random.seed(iter_num)
+  
+    nnet = NNet(g)
+    nnet.load_checkpoint('./temp/','best.pth.tar')
+  
+    heuristic = Heuristic(game).random_play
+    
+    mcts1 = MCTS(game, nnet, args)
+  
+    arena = Arena.Arena(None, heuristic,  game, display=display, mcts=mcts1)
+    return arena.playGames(args.numPerProcessSelfPlay, verbose=True)
+
+def parallel_play_arena(args, game, player2):
+  
+    #nnet = NNet(g)
+    #nnet.load_checkpoint('./temp/','best.pth.tar')
+    #print("www", os.environ["CUDA_VISIBLE_DEVICES"])
+    temp = []
+    result = []
+    pool = multiprocessing.Pool(processes=args.numSelfPlayProcess)
+    res = []
+    for iter_num in range(args.numSelfPlayProcess):
+        res.append(pool.apply_async(Async_Arena, args=(iter_num, game, args)))
+    pool.close()
+    pool.join()
+    for i in res:
+        result.append(i.get())
+
+    filename = os.path.join('temp_try', 'trainhistory.pth.tar'+".examples")
+    with open(filename, "wb+") as f:
+        Pickler(f).dump(result)
+        f.closed
+
+        
 def Async_Play(game,args,iter_num,bar):
     bar.suffix = "iter:{i}/{x} | Total: {total:} | ETA: {eta:}".format(
         i=iter_num+1,x=args.numPlayGames,total=bar.elapsed_td, eta=bar.eta_td)
@@ -138,47 +186,42 @@ if __name__=="__main__":
         print("Model 1 Win:",oneWon," Model 2 Win:",twoWon," Draw:",draws)
 
 
-    g = GobangGame(col=8, row=4, nir=7, defender=-1)
-    os.environ['TF_CPP_MIN_LOG_LEVEL'] = modeargs.gpu
-    # parallel version
-    #ParallelPlay(g)
-
-    # single process version
+    g = GobangGame(col=12, row=4, nir=7, defender=-1)
+    os.environ["CUDA_VISIBLE_DEVICES"] = modeargs.gpu
+    args1 = dotdict({'numMCTSSims': 10, 'cpuct':1.0, 'evaluationDepth':1, 'multiGPU': True,
+                     'setGPU':'0,1','alpha':0.3,'epsilon':0.25,'fast_eval':True,
+                     'numSelfPlayProcess': 1,'numPerProcessSelfPlay': 80,})
     # all players
     rp = RandomPlayer(g).play
     hp = HumanGobangPlayer(g).play
     heuristic_rand = Heuristic(g).random_play
     heuristic = Heuristic(g).play
+    
+    if modeargs.mode == 'learn':
+        #arena = Arena.Arena(n1p, heuristic_rand,  g, display=display, mcts=mcts1)
+        #print(arena.playGames(50, verbose=True))
+        parallel_play_arena(args1, g, heuristic_rand)
+        print("Well Done")
+        exit(0)
+      
+    # single process version
     policyPlayer = PolicyPlayer(g).play
     # nnet players
     n1 = NNet(g)
     n1.load_checkpoint('./temp/','best.pth.tar')
 
-    args1 = dotdict({'numMCTSSims': 1000, 'cpuct':1.0, 'evaluationDepth':1, 'multiGPU': args.multiGPU, 'setGPU':args.setGPU,'alpha':0.3,'epsilon':0.25,'fast_eval':True})
     mcts1 = MCTS(g, n1, args1, lambdaHeur=0.1)
     n1p = lambda b, p: np.argmax(mcts1.getActionProb(b, p, temp=0))
 
-    # improved nnet player
-    n2 = NNet(g)
-    n2.load_checkpoint('./temp/','best.pth.tar')
-    args2 = dotdict({'numMCTSSims':3000, 'cpuct':0.1, 'multiGPU':True,'alpha':0.3,'epsilon':0.25,})
-    mcts2 = MCTS(g, n2, args2, lambdaHeur=1.0)
-    n2p =  lambda b, p: np.argmax(mcts2.getActionProb(b, p, temp=0))
-
-      
-    all = {
-        'Random': rp,
-        'Best NN': n1p,
-        'Heuristic': heuristic,
-        '$\lambda$-Heur-{}'.format(args.lambdaHeur):n2p,
-    }
-    
     if modeargs.mode == 'human':
-        arena = Arena.Arena(n1p, hp, g, display=display)
+        arena = Arena.Arena(None, hp, g, display=display)
         print(arena.playGames(4, verbose=True))
     elif modeargs.mode == 'one2one':
-        arena = Arena.Arena(n1p, heuristic_rand,  g, display=display)
-        print(arena.playGames(100, verbose=True))
+        arena = Arena.Arena(n1p, heuristic_rand,  g, display=display, mcts=mcts1)
+        print(arena.playGames(50, verbose=True))
+        #parallel_play_arena(args1, g, heuristic_rand)
+        #print("Well Done")
+  
     elif modeargs.mode == 'one2all':
         results = []
         y = []

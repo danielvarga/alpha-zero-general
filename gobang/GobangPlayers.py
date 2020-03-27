@@ -117,12 +117,10 @@ class Heuristic():
         return np.sum(lineSize)
 
     def greedy(self, board):
-        for x in range(self.M):
-            for y in range(self.N):
-                if(board[x][y]==0):
-                    return x,y
-        print("Board is full!!!")
-        exit()
+        valids = self.game.getValidMoves(board, 1)
+        return np.argmax(valids)
+        #print("Board is full!!!")
+        #exit()
 
     # === NUMPY, fast version ===
     def get_x_line_mtx_new(self, board, player):
@@ -155,9 +153,9 @@ class Heuristic():
         mtx = np.tensordot(lineSize,self.lineMatrix, axes=([0],[0]))
         mtx*= (1-(board!=0).astype(int))
 
-        if np.max(mtx) == 0.0:
-            x,y = self.greedy(board)
-            mtx[x][y]=1.0
+        #if np.max(mtx) == 0.0:
+        #    a = self.greedy(board)
+        #    mtx[a/self.N][a%self.N]=1.0
         return mtx
 
     # === OLD, slow version ===

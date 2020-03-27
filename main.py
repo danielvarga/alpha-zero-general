@@ -16,14 +16,14 @@ args = dotdict({
     'tempThreshold': 24,
     'updateThreshold': 0.51,
     'maxlenOfQueue': 320000,
-    'numMCTSSims': 30,
+    'numMCTSSims': 1000,
     'cpuct': 1.0,
     'multiGPU': True,
     'setGPU': '0,1',
     # The total number of games when self-playing is:
     # Total = numSelfPlayProcess * numPerProcessSelfPlay
     'numSelfPlayProcess': 15,
-    'numPerProcessSelfPlay': 30,
+    'numPerProcessSelfPlay': 80,
     # The total number of games when against-playing is:
     # Total = numAgainstPlayProcess * numPerProcessAgainst
     'numAgainstPlayProcess': 10,
@@ -53,6 +53,6 @@ if __name__=="__main__":
     # tf.logging.info('TensorFlow')
     # os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3' 
 
-    g = Game(col=8, row=4, nir=7, defender=-1)
+    g = Game(col=12, row=4, nir=7, defender=-1)
     c = Coach(g, args)
     c.learn()

@@ -86,13 +86,16 @@ class MCTS():
             # === get v by simulation ===:
             #v = self.fast_search(raw_board, curPlayer, action)
             valids = self.game.getValidMoves(raw_board, curPlayer)
-            #print("val",valids)
-            
-            mtx = self.heuristic.get_field_stregth_mtx(raw_board, 1)
-            self.Ps[s] = mtx.flatten()/np.sum(mtx)
-            
-            #self.Ps[s] = valids/np.sum(valids)
 
+            mtx = self.heuristic.get_field_stregth_mtx(raw_board, 1)
+            probs = mtx.flatten()/np.sum(mtx)
+
+            # === Add Dirichlet noise ===
+            #eps = self.args.epsilon
+            #noise = np.random.dirichlet(self.alphas)
+            #probs = eps*noise+(1.0-eps)*probs
+
+            self.Ps[s] = probs
             self.Vs[s] = valids
             self.Ns[s] = 0
             self.Nsa[s] = np.zeros(self.action_size)
@@ -100,11 +103,9 @@ class MCTS():
             # TODO:
             #    --> fast search here???
             #    --> choose action radom/heuristic ...
-            #    --> 
+            #    -->
+            #v = curPlayer*self.get_heuristic_end(raw_board, curPlayer, action)
             #return -v
-        #else:
-            #print(self.Ps[s])
-            #print(raw_board)
             
         valids = self.Vs[s]
 
@@ -255,15 +256,18 @@ class MCTS():
         self.Ns[s] += 1
         return -v
 
-    def get_heuristic_end(self, raw_board, curPlayer, action):
-        next_s, next_player = raw_board, curPlayer
-        a = action
+    def get_heuristic_end(self, next_s, next_player, action):
         while 1:
+            mtx = self.heuristic.get_field_stregth_mtx(next_s, 1)
+            probs = mtx.flatten()
+            a = np.argmax(probs)
+            
             end = self.game.getGameEnded(next_s, next_player, a)
+            if probs[a]==0.0: end=-1
+            
             if end != 0:
                 return end
             else:
-                a = self.heuristic.play(next_s, next_player)
                 next_s, next_player = self.game.getNextState(next_s, next_player, a)
 
         print("You shouldn't be here")
