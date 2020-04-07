@@ -31,7 +31,9 @@ class Arena():
         if(mcts!=None):
             self.mcts=mcts
             self.trainExamples=[]
-            
+        else:
+            self.mcts=None
+        
     def playGame(self, verbose=False):
         """
         Executes one episode of a game.

@@ -77,14 +77,26 @@ def parallel_play_arena(args, game, player2):
     res = []
     for iter_num in range(args.numSelfPlayProcess):
         res.append(pool.apply_async(Async_Arena, args=(iter_num, game, args)))
+
     pool.close()
     pool.join()
     for i in res:
         result.append(i.get())
 
-    filename = os.path.join('temp_try', 'trainhistory.pth.tar'+".examples")
+    temp = []
+    for i in result:
+      for j in i:
+        for trainData in j:
+          temp += trainData
+
+    folder = 'temp_measure1'
+    if not os.path.exists(folder):
+        os.makedirs(folder)
+
+    iterations_data = [temp]
+    filename = os.path.join(folder, 'trainhistory.pth.tar'+".examples")
     with open(filename, "wb+") as f:
-        Pickler(f).dump(result)
+        Pickler(f).dump(iterations_data)
         f.closed
 
         
@@ -188,9 +200,9 @@ if __name__=="__main__":
 
     g = GobangGame(col=12, row=4, nir=7, defender=-1)
     os.environ["CUDA_VISIBLE_DEVICES"] = modeargs.gpu
-    args1 = dotdict({'numMCTSSims': 10, 'cpuct':1.0, 'evaluationDepth':1, 'multiGPU': True,
+    args1 = dotdict({'numMCTSSims': 4000, 'cpuct':1.0, 'evaluationDepth':1, 'multiGPU': True,
                      'setGPU':'0,1','alpha':0.3,'epsilon':0.25,'fast_eval':True,
-                     'numSelfPlayProcess': 1,'numPerProcessSelfPlay': 80,})
+                     'numSelfPlayProcess': 6,'numPerProcessSelfPlay': 40,})
     # all players
     rp = RandomPlayer(g).play
     hp = HumanGobangPlayer(g).play
