@@ -88,12 +88,13 @@ class MCTS():
             valids = self.game.getValidMoves(raw_board, curPlayer)
 
             mtx = self.heuristic.get_field_stregth_mtx(raw_board, 1)
-            probs = mtx.flatten()/np.sum(mtx)
+            probs = 0.001*valids+mtx.flatten()/np.sum(mtx)
 
             # === Add Dirichlet noise ===
             #eps = self.args.epsilon
-            #noise = np.random.dirichlet(self.alphas)
-            #probs = eps*noise+(1.0-eps)*probs
+            eps = 0.1
+            noise = np.random.dirichlet(self.alphas)
+            probs = eps*noise+(1.0-eps)*probs
 
             self.Ps[s] = probs
             self.Vs[s] = valids
@@ -104,8 +105,8 @@ class MCTS():
             #    --> fast search here???
             #    --> choose action radom/heuristic ...
             #    -->
-            #v = curPlayer*self.get_heuristic_end(raw_board, curPlayer, action)
-            #return -v
+            v = curPlayer*self.get_heuristic_end(raw_board, curPlayer, action)
+            return -v
             
         valids = self.Vs[s]
 
@@ -259,17 +260,22 @@ class MCTS():
     def get_heuristic_end(self, next_s, next_player, action):
         while 1:
             mtx = self.heuristic.get_field_stregth_mtx(next_s, 1)
+            valids = self.game.getValidMoves(next_s, next_player)
             probs = mtx.flatten()
-            a = np.argmax(probs)
-            
+            eps = 0.1
+            noise = np.random.dirichlet(self.alphas)*valids
+            probs = eps*noise+(1.0-eps)*probs
+ 
+
+            a = np.argmax(probs+0.001*valids)
+            next_s, next_player = self.game.getNextState(next_s, next_player, a)
+
             end = self.game.getGameEnded(next_s, next_player, a)
             if probs[a]==0.0: end=-1
             
             if end != 0:
                 return end
-            else:
-                next_s, next_player = self.game.getNextState(next_s, next_player, a)
-
+                
         print("You shouldn't be here")
         return 1
     

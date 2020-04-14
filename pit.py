@@ -63,8 +63,26 @@ def Async_Arena(iter_num, game, args):
     
     mcts1 = MCTS(game, nnet, args)
   
-    arena = Arena.Arena(None, heuristic,  game, display=display, mcts=mcts1)
-    return arena.playGames(args.numPerProcessSelfPlay, verbose=True)
+    arena = Arena.Arena(None, heuristic,  game, display=display,  mcts=mcts1)
+    data = arena.playGames(args.numPerProcessSelfPlay, verbose=False)
+
+    folder = 'temp_measure1/{}'.format(iter_num)
+    if not os.path.exists(folder):
+        os.makedirs(folder)
+
+    print("Done ".format(iter_num))
+    temp = []
+    for j in data:
+      for trainData in j:
+        temp += trainData
+
+    iterations_data = [temp]
+    filename = os.path.join(folder, 'trainhistory.pth.tar'+".examples")
+    with open(filename, "wb+") as f:
+        Pickler(f).dump(iterations_data)
+        f.closed
+
+    return data
 
 def parallel_play_arena(args, game, player2):
   
@@ -80,15 +98,18 @@ def parallel_play_arena(args, game, player2):
 
     pool.close()
     pool.join()
+    print("Joined 0")
     for i in res:
         result.append(i.get())
 
+    print("Joined")
     temp = []
     for i in result:
       for j in i:
         for trainData in j:
           temp += trainData
 
+    print("Collected")
     folder = 'temp_measure1'
     if not os.path.exists(folder):
         os.makedirs(folder)
@@ -99,6 +120,7 @@ def parallel_play_arena(args, game, player2):
         Pickler(f).dump(iterations_data)
         f.closed
 
+    print("Wrote to file")
         
 def Async_Play(game,args,iter_num,bar):
     bar.suffix = "iter:{i}/{x} | Total: {total:} | ETA: {eta:}".format(
@@ -200,9 +222,9 @@ if __name__=="__main__":
 
     g = GobangGame(col=12, row=4, nir=7, defender=-1)
     os.environ["CUDA_VISIBLE_DEVICES"] = modeargs.gpu
-    args1 = dotdict({'numMCTSSims': 4000, 'cpuct':1.0, 'evaluationDepth':1, 'multiGPU': True,
+    args1 = dotdict({'numMCTSSims': 1500, 'cpuct':1.0, 'evaluationDepth':1, 'multiGPU': True,
                      'setGPU':'0,1','alpha':0.3,'epsilon':0.25,'fast_eval':True,
-                     'numSelfPlayProcess': 6,'numPerProcessSelfPlay': 40,})
+                     'numSelfPlayProcess': 10,'numPerProcessSelfPlay': 300,})
     # all players
     rp = RandomPlayer(g).play
     hp = HumanGobangPlayer(g).play
