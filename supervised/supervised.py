@@ -9,7 +9,7 @@ from pickle import Pickler, Unpickler
 
 print(tf.__version__)
 
-EPOCHS = 10
+EPOCHS = 50
 NUM_CHANNELS=128
 KERNEL_SIZE=(4,4)
 DROPOUT_RATE=0
@@ -17,9 +17,11 @@ BATCHNORM=True
 BATCH_SIZE=128
 SPLIT=0.2
 CACHE=True
-REMOVE_DUPLICATES=False
-DATAFILE="/home/doma945/amoba_teleport/temp"
-# DATAFILE="amoba_samples/temp"
+REMOVE_DUPLICATES=True
+AVERAGE_DUPLICATES=True
+DATAFILE="/home/doma945/amoba_teleport/temp_4000sim"
+CACHEFILE = "/home/zombori/tmp/amoba_cache.npz"
+
 
 def load_history():
     # ===== load history file =====
@@ -46,24 +48,47 @@ def load_history():
     print("Number of all trainexamples: {}".format(len(trainExamples)))
     return trainExamples
 
-def remove_duplicates(x, y):
+def remove_duplicates(xs, ps, vs):
     dict = {}
-    for i in range(x.shape[0]):
-        s = str(x[i])
+    for i in range(xs.shape[0]):
+        s = str(xs[i])
         dict[s] = i
 
     indices = list(dict.values())
-    xs = x[indices]
-    ys = y[indices]
+    xs2 = xs[indices]
+    ps2 = ps[indices]
+    vs2 = vs[indices]
 
-    print("Reduced shapes {} and {} to {} and {}".format(x.shape, y.shape, xs.shape, ys.shape))
-    return xs, ys
+    print("Reduced shapes {}, {}, {} to {}, {}, {}".format(xs.shape, ps.shape, vs.shape, xs2.shape, ps2.shape, vs2.shape))
+    return xs2, ps2, vs2
 
+def average_duplicates(xs, ps, vs):
+    dict = {}
+    for i in range(xs.shape[0]):
+        s = str(xs[i])
+        if s in dict:
+            dict[s]["ps"].append(ps[i])
+            dict[s]["vs"].append(vs[i])
+        else:
+            dict[s] = {"x": xs[i], "ps": [ps[i]], "vs": [vs[i]]}
+    xs2 = []
+    ps2 = []
+    vs2 = []
+    for s in dict:
+        xs2.append(dict[s]["x"])
+        ps2.append(np.mean(dict[s]["ps"], axis=0))
+        vs2.append(np.mean(dict[s]["vs"]))
+    xs2 = np.array(xs2)
+    ps2 = np.array(ps2)
+    vs2 = np.array(vs2)
+
+    print("Average: reduced shapes {}, {}, {} to {}, {}, {}".format(xs.shape, ps.shape, vs.shape, xs2.shape, ps2.shape, vs2.shape))
+    return xs2, ps2, vs2
+    
 
 def preprocess_data(cache=True):
-    cacheFile = "/home/zombori/tmp/amoba_cache.npz"
-    if cache and os.path.isfile(cacheFile):
-        npz = np.load(cacheFile)
+    if cache and os.path.isfile(CACHEFILE):
+        npz = np.load(CACHEFILE)
         xs = npz['xs']
         ps = npz['ps']
         vs = npz['vs']
@@ -87,16 +112,32 @@ def preprocess_data(cache=True):
         player_channel = curPlayer * np.ones_like(board)
         xs = np.concatenate([white_board, black_board, heur_channels, player_channel], axis=3)
 
-        np.savez(cacheFile, xs=xs, ps=ps, vs=vs)
+        if AVERAGE_DUPLICATES:
+            xs, ps, vs = average_duplicates(xs, ps, vs)
+        elif REMOVE_DUPLICATES:
+            xs, ps, vs = remove_duplicates(xs, ps, vs)
+        np.savez(CACHEFILE, xs=xs, ps=ps, vs=vs)
 
     print("Input shape: ", xs.shape)
     print("Target policy shape: ", ps.shape)
     print("Target value shape: ", vs.shape)
-    # if REMOVE_DUPLICATES:
-    #     xs, ys = remove_duplicates(xs, ys)
     return (xs, ps, vs)
 
+
 (xs, ps, vs) = preprocess_data(cache=CACHE)
+
+def show(i):
+    x = xs[i]
+    p = ps[i]
+    white = (x[:,:,0]+1) / 2
+    black = (x[:,:,1]+1) / 2
+    board = white - black
+    policy = p[:-1].reshape((12,4))
+    print(board)
+    print(policy)
+
+
+
 
 input_shape = xs.shape[1:]
 policy_shape = ps.shape[1:]
@@ -160,7 +201,11 @@ loss_weights = {
     "value": 10,
 }
 metrics = {
-    "policy": 'categorical_accuracy',
+    "policy": ['categorical_accuracy',
+               keras.metrics.TopKCategoricalAccuracy(2, "top2"),
+               keras.metrics.TopKCategoricalAccuracy(3, "top3"),
+               keras.metrics.TopKCategoricalAccuracy(4, "top4"),
+               keras.metrics.TopKCategoricalAccuracy(5, "top5")],
     "value": 'mse',
 }
 
