@@ -19,6 +19,7 @@ SPLIT=0.2
 CACHE=True
 REMOVE_DUPLICATES=False
 AVERAGE_DUPLICATES=True
+#DATAFILE="/home/doma945/amoba_teleport/temp_1000sim_medium"
 DATAFILE="/home/doma945/amoba_teleport/temp_1000sim_big"
 #DATAFILE="/home/doma945/amoba_teleport/temp_4000sim"
 CACHEFILE = "/home/zombori/tmp/amoba_cache.npz"
@@ -98,11 +99,14 @@ def preprocess_data(cache=True):
         xs = []
         ps = []
         vs = []
+        curPlayers = []
         for (allBoard, curPlayer, pi, action) in trainExamples:
             xs.append(allBoard)
+            curPlayers.append(curPlayer)
             ps.append(pi)
             vs.append(action)
         xs = np.array(xs)
+        curPlayers = np.array(curPlayers)
         ps = np.array(ps)
         vs = np.array(vs)
 
@@ -110,7 +114,9 @@ def preprocess_data(cache=True):
         heur_channels = xs[:,:,:,1:]
         white_board = board * (board+1) -1
         black_board = board * (board-1) -1
-        player_channel = curPlayer * np.ones_like(board)
+
+        curPlayers = curPlayers.reshape((-1, 1, 1, 1))
+        player_channel = curPlayers * np.ones_like(board)            
         xs = np.concatenate([white_board, black_board, heur_channels, player_channel], axis=3)
 
         if AVERAGE_DUPLICATES:
@@ -132,12 +138,19 @@ def show(i):
     p = ps[i]
     white = (x[:,:,0]+1) / 2
     black = (x[:,:,1]+1) / 2
+    player = x[0,0,10]
     board = white - black
-    policy = p[:-1].reshape((12,4))
-    print(board)
-    print(policy)
+    policy = p.reshape((12,4))
+    value = vs[i]
+    print(np.transpose(board))
+    print(np.transpose(policy))
+    print("value: ", value)
+    print("player: ", player)
 
 
+# players = np.mean(xs[:,:,:,10], axis=(1,2))
+# print(len(players))
+# print(np.sum(players))
 
 
 input_shape = xs.shape[1:]
@@ -186,10 +199,22 @@ if NETWORK=="original":
     model = keras.Model(inputs=inputs, outputs=(pi, v))
 elif NETWORK=="linear":
     inputs = keras.Input(shape=input_shape)
-    outputs = layers.Conv2D(1, (1,1), padding="same", name="conv1")(inputs)
-    pi = layers.Flatten(name="policy")(outputs)
-    v0 = layers.Dense(1)(pi)
-    v = layers.Activation(tf.math.tanh, name="value")(v0)
+    pi = layers.Conv2D(1, (1,1), padding="same", name="conv1")(inputs)
+    pi = layers.Flatten(name="policy")(pi)
+    v = layers.Flatten()(inputs)
+    # v = layers.Dense(1, activation="relu")(v)
+    v = layers.Dense(1)(v)
+    v = layers.Activation(tf.math.tanh, name="value")(v)
+    model = keras.Model(inputs=inputs, outputs=(pi, v))
+elif NETWORK=="linear2":
+    inputs = keras.Input(shape=input_shape)
+    pi = layers.Conv2D(10, (1,1), padding="same", name="conv1", activation="relu")(inputs)
+    pi = layers.Conv2D(1, (1,1), padding="same", name="conv2")(pi)
+    pi = layers.Flatten(name="policy")(pi)
+    v = layers.Flatten()(inputs)
+    # v = layers.Dense(1, activation="relu")(v)
+    v = layers.Dense(1)(v)
+    v = layers.Activation(tf.math.tanh, name="value")(v)
     model = keras.Model(inputs=inputs, outputs=(pi, v))
 elif NETWORK=="local":
     inputs = keras.Input(shape=input_shape)
@@ -238,7 +263,7 @@ model.compile(optimizer="adam",
               metrics=metrics
 )
 
-model.fit(xs, (ps, vs), epochs=EPOCHS, batch_size=BATCH_SIZE, validation_split=SPLIT)
+model.fit(xs, (ps, vs), epochs=EPOCHS, batch_size=BATCH_SIZE, validation_split=SPLIT, verbose=2)
 
 mylayer = model.get_layer(name="conv1")
 myweights = mylayer.trainable_weights[0]
