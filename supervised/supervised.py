@@ -9,7 +9,7 @@ from pickle import Pickler, Unpickler
 
 print(tf.__version__)
 
-EPOCHS = 50
+EPOCHS = 200
 NUM_CHANNELS=128
 KERNEL_SIZE=(4,4)
 DROPOUT_RATE=0
@@ -17,11 +17,12 @@ BATCHNORM=True
 BATCH_SIZE=128
 SPLIT=0.2
 CACHE=True
-REMOVE_DUPLICATES=True
+REMOVE_DUPLICATES=False
 AVERAGE_DUPLICATES=True
-DATAFILE="/home/doma945/amoba_teleport/temp_4000sim"
+DATAFILE="/home/doma945/amoba_teleport/temp_1000sim_big"
+#DATAFILE="/home/doma945/amoba_teleport/temp_4000sim"
 CACHEFILE = "/home/zombori/tmp/amoba_cache.npz"
-
+NETWORK="linear"
 
 def load_history():
     # ===== load history file =====
@@ -143,55 +144,73 @@ input_shape = xs.shape[1:]
 policy_shape = ps.shape[1:]
 pi_output_count = np.prod(policy_shape)
 
-# model = keras.Sequential([
-#     keras.layers.Flatten(input_shape=input_shape),
-#     keras.layers.Dense(1128, activation='relu'),
-#     keras.layers.Dense(1256, activation='relu'),
-#     keras.layers.Dense(1128, activation='relu'),
-#     keras.layers.Dense(output_count),
-#     keras.layers.Reshape(output_shape)
-# ])
+if NETWORK=="original":
+    inputs = keras.Input(shape=input_shape)
+    outputs = inputs
+    outputs = layers.Conv2D(NUM_CHANNELS, KERNEL_SIZE, padding="same")(outputs)
+    if BATCHNORM: outputs = tf.keras.layers.BatchNormalization()(outputs)
+    outputs = layers.Activation(tf.nn.relu)(outputs)
+    outputs = layers.Conv2D(NUM_CHANNELS, KERNEL_SIZE, padding="same")(outputs)
+    if BATCHNORM: outputs = tf.keras.layers.BatchNormalization()(outputs)
+    outputs = layers.Activation(tf.nn.relu)(outputs)
+    outputs = layers.Conv2D(NUM_CHANNELS, KERNEL_SIZE, padding="same", strides=(2,1))(outputs)
+    if BATCHNORM: outputs = tf.keras.layers.BatchNormalization()(outputs)
+    outputs = layers.Activation(tf.nn.relu)(outputs)
+    outputs = layers.Conv2D(NUM_CHANNELS, KERNEL_SIZE, padding="same", strides=(2,2))(outputs)
+    if BATCHNORM: outputs = tf.keras.layers.BatchNormalization()(outputs)
+    outputs = layers.Activation(tf.nn.relu)(outputs)
+    outputs = layers.Flatten()(outputs)
 
-inputs = keras.Input(shape=input_shape)
-outputs = inputs
-outputs = layers.Conv2D(NUM_CHANNELS, KERNEL_SIZE, padding="same")(outputs)
-if BATCHNORM: outputs = tf.keras.layers.BatchNormalization()(outputs)
-outputs = layers.Activation(tf.nn.relu)(outputs)
-outputs = layers.Conv2D(NUM_CHANNELS, KERNEL_SIZE, padding="same")(outputs)
-if BATCHNORM: outputs = tf.keras.layers.BatchNormalization()(outputs)
-outputs = layers.Activation(tf.nn.relu)(outputs)
-outputs = layers.Conv2D(NUM_CHANNELS, KERNEL_SIZE, padding="same", strides=(2,1))(outputs)
-if BATCHNORM: outputs = tf.keras.layers.BatchNormalization()(outputs)
-outputs = layers.Activation(tf.nn.relu)(outputs)
-outputs = layers.Conv2D(NUM_CHANNELS, KERNEL_SIZE, padding="same", strides=(2,2))(outputs)
-if BATCHNORM: outputs = tf.keras.layers.BatchNormalization()(outputs)
-outputs = layers.Activation(tf.nn.relu)(outputs)
-outputs = layers.Flatten()(outputs)
+    outputs_flat = layers.Flatten()(inputs)
+    outputs_flat = layers.Dense(1512)(outputs_flat)
+    if BATCHNORM: outputs = tf.keras.layers.BatchNormalization()(outputs)
+    outputs = layers.Activation(tf.nn.relu)(outputs)
+    outputs_flat = layers.Dropout(DROPOUT_RATE)(outputs_flat)
+    outputs_flat = layers.Dense(1256)(outputs_flat)
+    if BATCHNORM: outputs = tf.keras.layers.BatchNormalization()(outputs)
+    outputs = layers.Activation(tf.nn.relu)(outputs)
+    outputs_flat = layers.Dropout(DROPOUT_RATE)(outputs_flat)
 
-outputs_flat = layers.Flatten()(inputs)
-outputs_flat = layers.Dense(1512)(outputs_flat)
-if BATCHNORM: outputs = tf.keras.layers.BatchNormalization()(outputs)
-outputs = layers.Activation(tf.nn.relu)(outputs)
-outputs_flat = layers.Dropout(DROPOUT_RATE)(outputs_flat)
-outputs_flat = layers.Dense(1256)(outputs_flat)
-if BATCHNORM: outputs = tf.keras.layers.BatchNormalization()(outputs)
-outputs = layers.Activation(tf.nn.relu)(outputs)
-outputs_flat = layers.Dropout(DROPOUT_RATE)(outputs_flat)
+    outputs = layers.Concatenate(axis=1)([outputs_flat, outputs])
+    outputs = layers.Dense(1024)(outputs)
+    outputs = layers.Dropout(DROPOUT_RATE)(outputs)
+    if BATCHNORM: outputs = tf.keras.layers.BatchNormalization()(outputs)
+    outputs = layers.Activation(tf.nn.relu)(outputs)
+    outputs = layers.Dense(512)(outputs)
+    outputs = layers.Dropout(DROPOUT_RATE)(outputs)
+    if BATCHNORM: outputs = tf.keras.layers.BatchNormalization()(outputs)
+    outputs = layers.Activation(tf.nn.relu)(outputs)
+    pi = layers.Dense(pi_output_count, name="policy")(outputs)
+    v0 = layers.Dense(1)(outputs)
+    v = layers.Activation(tf.math.tanh, name="value")(v0)
+    model = keras.Model(inputs=inputs, outputs=(pi, v))
+elif NETWORK=="linear":
+    inputs = keras.Input(shape=input_shape)
+    outputs = layers.Conv2D(1, (1,1), padding="same", name="conv1")(inputs)
+    pi = layers.Flatten(name="policy")(outputs)
+    v0 = layers.Dense(1)(pi)
+    v = layers.Activation(tf.math.tanh, name="value")(v0)
+    model = keras.Model(inputs=inputs, outputs=(pi, v))
+elif NETWORK=="local":
+    inputs = keras.Input(shape=input_shape)
+    outputs = layers.Conv2D(1, (3,3), padding="same", name="conv1")(inputs)
+    pi = layers.Flatten(name="policy")(outputs)
+    v0 = layers.Dense(1)(pi)
+    v = layers.Activation(tf.math.tanh, name="value")(v0)
+    model = keras.Model(inputs=inputs, outputs=(pi, v))
+    
+# elif NETWORK=="dense": # todo two heads
+#     model = keras.Sequential([
+#         keras.layers.Flatten(input_shape=input_shape),
+#         keras.layers.Dense(1128, activation='relu'),
+#         keras.layers.Dense(1256, activation='relu'),
+#         keras.layers.Dense(1128, activation='relu'),
+#         keras.layers.Dense(output_count),
+#         keras.layers.Reshape(output_shape)
+#     ])
 
-outputs = layers.Concatenate(axis=1)([outputs_flat, outputs])
-outputs = layers.Dense(1024)(outputs)
-outputs = layers.Dropout(DROPOUT_RATE)(outputs)
-if BATCHNORM: outputs = tf.keras.layers.BatchNormalization()(outputs)
-outputs = layers.Activation(tf.nn.relu)(outputs)
-outputs = layers.Dense(512)(outputs)
-outputs = layers.Dropout(DROPOUT_RATE)(outputs)
-if BATCHNORM: outputs = tf.keras.layers.BatchNormalization()(outputs)
-outputs = layers.Activation(tf.nn.relu)(outputs)
-pi = layers.Dense(pi_output_count, name="policy")(outputs)
-v0 = layers.Dense(1)(outputs)
-v = layers.Activation(tf.math.tanh, name="value")(v0)
 
-model = keras.Model(inputs=inputs, outputs=(pi, v))
+    
 loss = {
     "policy": keras.losses.CategoricalCrossentropy(from_logits=True),
     "value": keras.losses.MeanSquaredError(),
@@ -220,3 +239,11 @@ model.compile(optimizer="adam",
 )
 
 model.fit(xs, (ps, vs), epochs=EPOCHS, batch_size=BATCH_SIZE, validation_split=SPLIT)
+
+mylayer = model.get_layer(name="conv1")
+myweights = mylayer.trainable_weights[0]
+myweights = myweights.numpy()[:,:,:,0]
+print(myweights.shape)
+for i in range(11):
+    print("Filter ", i)
+    print(myweights[:,:,i])
