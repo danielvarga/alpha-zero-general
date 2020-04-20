@@ -11,19 +11,19 @@ Before using multiprocessing, please check 2 things before use this script.
 args = dotdict({
     'displaybar': True,
     'multiCPU': True,
-    'numIters': 1,
+    'numIters': 3,
     'numEps': 100,
     'tempThreshold': 24,
     'updateThreshold': 0.51,
     'maxlenOfQueue': 320000,
-    'numMCTSSims': 1000,
+    'numMCTSSims': 300,
     'cpuct': 1.0,
     'multiGPU': True,
     'setGPU': '0,1',
     # The total number of games when self-playing is:
     # Total = numSelfPlayProcess * numPerProcessSelfPlay
-    'numSelfPlayProcess': 15,
-    'numPerProcessSelfPlay': 80,
+    'numSelfPlayProcess': 10,
+    'numPerProcessSelfPlay': 50,
     # The total number of games when against-playing is:
     # Total = numAgainstPlayProcess * numPerProcessAgainst
     'numAgainstPlayProcess': 10,
@@ -37,8 +37,8 @@ args = dotdict({
     'evaluationDepth':1,
     'alpha':0.4,
     'epsilon':0.1,
-    'heur_val_eps':0.0,
-    'fast_eval':True,
+    'heur_val_eps':1.0,
+    'fast_eval':False,
 })
 
 if __name__=="__main__":

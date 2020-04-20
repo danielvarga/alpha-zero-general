@@ -27,7 +27,7 @@ SPLIT=0.2
 CACHE=False
 REMOVE_DUPLICATES=False
 #DATAFILE="../temp_8_x4"
-DATAFILE="temp_measure1"
+DATAFILE="/mnt/g1home/doma945/amoba_teleport/temp_1000sim_big"
 
 
 def load_history():
@@ -53,6 +53,13 @@ def load_history():
         trainExamples.extend(np.array(e))
         
     print("Number of all trainexamples: {}".format(len(trainExamples)))
+    #print(trainExamples[0:10][0])
+
+    arr = []
+    for item in trainExamples[:]:
+        arr.append(item[-3])
+
+    print(np.mean(arr))
     return trainExamples
 
 def remove_duplicates(x, y):
@@ -190,6 +197,8 @@ def play_arena(model):
 
 
 
+load_history()
+exit()
 # === MAIN ===
 (xs, ys, vs) = preprocess_data(cache=CACHE)
 

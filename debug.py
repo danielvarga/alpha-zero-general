@@ -100,7 +100,13 @@ def save_act_model(g):
     print("Save done")
     
 if __name__ == "__main__":
-    os.environ["CUDA_VISIBLE_DEVICES"] = "1,2"
-    g = GobangGame(col=8, row=4, nir=7, defender=-1)
-    #train_from_scratch(g, (0,5))
-    save_act_model(g)
+    game = GobangGame(col=8, row=4, nir=7, defender=-1)
+    nnet = NNet(game)
+    nnet.load_checkpoint('./temp/','best.pth.tar')
+    args1 = dotdict({'numMCTSSims': 1500, 'cpuct':1.0, 'evaluationDepth':1,
+                     'multiGPU': True,
+                     'setGPU':'0,1','alpha':0.3,'epsilon':0.25,'fast_eval':True,
+                     'numSelfPlayProcess': 10,'numPerProcessSelfPlay': 300,})
+
+    mcts = MCTS(game, nnet, args1)
+    
