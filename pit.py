@@ -222,7 +222,7 @@ if __name__=="__main__":
 
     g = GobangGame(col=12, row=4, nir=7, defender=-1)
     os.environ["CUDA_VISIBLE_DEVICES"] = modeargs.gpu
-    args1 = dotdict({'numMCTSSims': 1500, 'cpuct':1.0, 'evaluationDepth':1, 'multiGPU': True,
+    args1 = dotdict({'numMCTSSims': 150, 'cpuct':1.0, 'evaluationDepth':1, 'multiGPU': True,
                      'setGPU':'0,1','alpha':0.3,'epsilon':0.25,'fast_eval':True,
                      'numSelfPlayProcess': 10,'numPerProcessSelfPlay': 300,})
     # all players

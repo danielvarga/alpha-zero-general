@@ -9,6 +9,7 @@ import math
 
 # defender=1: white aims for draw
 # defender=-1: black aims for draw
+
 class GobangGame(Game):
     def __init__(self, col=11, row=4, nir=7, defender=-1):
         self.col = col
@@ -21,7 +22,6 @@ class GobangGame(Game):
         # return initial board (numpy board)
         b = np.zeros((self.col, self.row))
         return b
-        #        return np.array(b.pieces)
 
     def getBoardSize(self):
         # (a,b) tuple
@@ -35,10 +35,6 @@ class GobangGame(Game):
         # if player takes action on board, return next (board,player)
         # action must be a valid move
         
-        # if action == self.col * self.row:
-        #     return (board, -player)
-        # b = Board(self.col, self.row)
-        # b.pieces = np.copy(board)
         move = (int(action / self.row), action % self.row)
         board = self.execute_move(board, move, player)
         return (board, -player)
@@ -60,32 +56,43 @@ class GobangGame(Game):
     # modified
     def getValidMoves(self, raw_board, player):
         return (0 == raw_board.flatten()).astype('int')
-    
-        # # return a fixed size binary vector
-        # valids = [0] * self.getActionSize()
-        # b = Board(self.col, self.row)
-        # b.pieces = np.copy(board)
-        # legalMoves = b.get_legal_moves(player)
-        # if len(legalMoves) == 0:
-        #     valids[-1] = 1
-        #     return np.array(valids)
-        # for x, y in legalMoves:
-        #     valids[self.row * x + y] = 1
-        # return np.array(valids)
-
-    # def emptyFields(self, board):
-    #     emptyNum = 0
-    #     N,M = np.shape(board)
-    #     for i in range(N):
-    #         for j in range(M):
-    #             if(board[i][j]==0):
-    #                 emptyNum+=1
-
-    #     return float(emptyNum+1)
 
     # def getReward(self, board, winner):
     #     return winner + winner*self.emptyFields(board)/20.0
+
+    def getValidMoves_comp(self, compressed_board):
+        invalids = np.bitwise_or(compressed_board[0],compressed_board[1])
+        valids =  np.invert(invalids)
+        return np.unpackbits(valids).astype(int)
         
+    def compress_board(self, raw_board):
+        player1 = (raw_board == 1)
+        player2 = (raw_board == -1)
+        
+        #assert size % 8 ==0 # If not, extend with zeros
+        p1 = np.packbits(player1.flatten())
+        p2 = np.packbits(player2.flatten())
+        return np.array([p1,p2])
+
+    def decompress(self, compressed_board):
+        p1 = np.unpackbits(compressed_board[0]).astype(int)
+        p2 = np.unpackbits(compressed_board[1]).astype(int)
+        #print(p1, p2)
+        return  p1-p2
+        
+    def getNextState_comp(self, compressed_board, curPlayer, action):
+        if(curPlayer == 1):
+            curr = 0; next = 1;
+        else:
+            curr = 1; next = 0;
+
+        #print((compressed_board[curr]) & (1<<action))
+        assert not np.any(compressed_board[curr][action//8] & (1<<(7-action%8)))
+        assert not np.any(compressed_board[next][action//8] & (1<<(7-action%8)))
+
+        compressed_board[curr][action//8] |= (1<<(7-action%8))
+        return compressed_board, -curPlayer
+
     def getGameEnded(self, board, player, action):
         """
         Return the Reward for the current board:
@@ -93,17 +100,7 @@ class GobangGame(Game):
         0             : if game is not over
         """
         if(action < 0):
-            return 0
-
-        #if self.heuristic.has_lost(board, -1, action) != self.heuristic.has_lost2(board, -1, action):
-        #    print(self.heuristic.has_lost2(board, -1, action))
-        #    print(board)
-        #    exit(1)
-        #if self.heuristic.no_free_line(board) != self.heuristic.no_free_line2(board):
-        #    print(board)
-        #    exit(1)
-        
-
+            return 0        
         
         if self.heuristic.has_lost(board, -1, action):
            return player
@@ -113,100 +110,6 @@ class GobangGame(Game):
            return -player
         else:
            return 0
-        # if(self.has_lost(board, player)):
-        #     return -1
-        # elif(self.has_lost(board, -player)):
-        #     return 1
-        # else:
-        #     return 0
-
-    # modified    
-    # def has_lost(self, board, player):
-    #     # return True, if player lost, else False
-    #     b = Board(self.col, self.row)
-    #     b.pieces = np.copy(board)
-    #     n = self.n_in_row
-    #     col = self.col
-    #     row = self.row
-
-    #     # display(board)
-    #     opponent = - player
-
-    #     for w in range(col):
-    #         # if the offence has a full column, he won
-    #         if set(board[w][i] for i in range(self.row)) == {opponent}:
-    #             return True
-            
-    #         # if the offence has a row of len self.n_in_row, he won
-    #         if (w in range(col - n + 1)):
-    #             for h in range(row):
-    #                 if set(board[i][h] for i in range(w, w + n)) == {opponent}:
-    #                     return True
-
-    #         # if the offence has a row of len 4 in the border, he won
-    #         #half = int(math.ceil(n/2))
-    #         half = 4
-    #         if (w in [0,col-half]):
-    #             for h in range(row):
-    #                 if set(board[i][h] for i in range(w, w + half)) == {opponent}:
-    #                     return True
-            
-    #         # if the offence has a full diagonal of length col, he won
-    #         if (w in range(col - row + 1)):
-    #             if set(board[w+l][l] for l in range(row)) == {opponent}:
-    #                 return True
-    #         if (w in range(row-1, col)):
-    #             if set(board[w-l][l] for l in range(row)) == {opponent}:
-    #                 return True
-            
-                    
-    #         # if the offence has 3 in a corner diagonal, he won
-    #         if set((board[2][0], board[1][1], board[0][2])) == {opponent}:
-    #             return True
-    #         if set((board[col-3][0], board[col-2][1], board[col-1][2])) == {opponent}:
-    #             return True
-    #         if set((board[0][row-3], board[1][row-2], board[2][row-1])) == {opponent}:
-    #             return True
-    #         if set((board[col-1][row-3], board[col-2][row-2], board[col-3][row-1])) == {opponent}:
-    #             return True
-
-    #         # if the offence has two in one of the northern corner diagonals, he won
-    #         if set((board[1][0], board[0][1])) == {opponent}:
-    #             return True
-    #         if set((board[col-2][0], board[col-1][1])) == {opponent}:
-    #             return True
-            
-    #     if b.has_legal_moves():
-    #         return False
-
-    #     # game is over and the defender has won
-    #     return player != self.defender
-
-    # def getCanonicalForm(self, board, player):
-    #     # return state if player==1, else return -state if player==-1
-    #     return player * board
-
-    # # modified
-    # def getSymmetries(self, board, pi):
-    #     assert False
-    #     # mirror, rotational
-    #     assert(len(pi) == self.n**2 + 1)  # 1 for pass
-    #     pi_board = np.reshape(pi[:-1], (self.n, self.n))
-    #     l = []
-
-    #     for i in range(1, 5):
-    #         for j in [True, False]:
-    #             newB = np.rot90(board, i)
-    #             newPi = np.rot90(pi_board, i)
-    #             if j:
-    #                 newB = np.fliplr(newB)
-    #                 newPi = np.fliplr(newPi)
-    #             l += [(newB, list(newPi.ravel()) + [pi[-1]])]
-    #     return l
-
-    # def stringRepresentation(self, board):
-    #     # 8x8 numpy array (canonical board)
-    #     return board.tostring()
 
 class bcolors:
     HEADER = '\033[95m'

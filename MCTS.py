@@ -43,14 +43,16 @@ class MCTS():
                 tmp_board = np.copy(board)
                 self.fast_search(tmp_board, curPlayer, -1)
 
-                s = board.tobytes()
+                #s = board.tobytes()
+                s = self.game.compress_board(board).tobytes()
                 counts = self.Nsa[s]
         else:
             for i in range(self.args.numMCTSSims):
                 tmp_board = np.copy(board)
                 self.search(tmp_board, curPlayer, -1)
 
-                s = board.tobytes()
+                #s = board.tobytes()
+                s = self.game.compress_board(board).tobytes()
                 counts = [self.Nsa[(s,a)] if (s,a) in self.Nsa else 0 for a in range(self.game.getActionSize())]
                 #counts = np.array([self.Qsa[(s,a)] if (s,a) in self.Qsa else 0 for a in range(self.game.getActionSize())])
         
@@ -71,7 +73,9 @@ class MCTS():
             return probs
 
     def fast_search(self, raw_board, curPlayer, action):
-        s = raw_board.tobytes()
+        #s = raw_board.tobytes()
+        s = self.game.compress_board(raw_board).tobytes()
+
         
         if s not in self.Es:
             self.Es[s] = self.game.getGameEnded(raw_board, curPlayer, action)
@@ -88,7 +92,7 @@ class MCTS():
             valids = self.game.getValidMoves(raw_board, curPlayer)
 
             mtx = self.heuristic.get_field_stregth_mtx(raw_board, 1)
-            probs = 0.001*valids+mtx.flatten()/np.sum(mtx)
+            probs = mtx.flatten()/np.sum(mtx)
 
             # === Add Dirichlet noise ===
             #eps = self.args.epsilon
@@ -267,11 +271,12 @@ class MCTS():
             probs = eps*noise+(1.0-eps)*probs
  
 
-            a = np.argmax(probs+0.001*valids)
+            a = np.argmax(probs)
             next_s, next_player = self.game.getNextState(next_s, next_player, a)
 
             end = self.game.getGameEnded(next_s, next_player, a)
-            if probs[a]==0.0: end=-1
+            if probs[a]==0.0:
+                end=-1
             
             if end != 0:
                 return end

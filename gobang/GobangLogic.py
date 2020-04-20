@@ -18,6 +18,7 @@ class Board():
         self.col = col
         self.row = row
         self.pieces = np.zeros((col, row))
+        self.size = row*col
         
         # # Create the empty board array.
         # self.pieces = [None]*self.col
@@ -35,21 +36,6 @@ class Board():
     def stringify(self):
         return self.pieces.tobytes()
     
-    # def get_legal_moves(self, color):
-    #     """Returns all the legal moves for the given color.
-    #     (1 for white, -1 for black
-    #     """
-    #     return self.pieces * (self.pieces + color) / 2
-
-        # moves = set()  # stores the legal moves.
-
-        # # Get all empty locations.
-        # for x in range(self.col):
-        #     for y in range(self.row):
-        #         if self[x][y] == 0:
-        #             moves.add((x, y))
-        # return list(moves)
-
     def has_legal_moves(self):
         """Returns True if has legal move else False
         """

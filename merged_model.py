@@ -27,8 +27,8 @@ SPLIT=0.2
 CACHE=False
 REMOVE_DUPLICATES=False
 #DATAFILE="../temp_8_x4"
-DATAFILE="/mnt/g1home/doma945/amoba_teleport/temp_1000sim_big"
-
+#DATAFILE="/mnt/g1home/doma945/amoba_teleport/temp_1000sim_big"
+DATAFILE="temp_measure1"
 
 def load_history():
     # ===== load history file =====
@@ -195,10 +195,6 @@ def play_arena(model):
     arena = Arena.Arena(model_player, heuristic,  game, display=display)
     return arena.playGames(100, verbose=True)
 
-
-
-load_history()
-exit()
 # === MAIN ===
 (xs, ys, vs) = preprocess_data(cache=CACHE)
 
