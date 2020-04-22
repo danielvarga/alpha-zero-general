@@ -9,11 +9,6 @@ from pickle import Pickler, Unpickler
 
 print(tf.__version__)
 
-import Arena
-from gobang.GobangGame import GobangGame, display
-from gobang.GobangPlayers import *
-from gobang.tensorflow.NNet import NNetWrapper as NNet
-
 EPOCHS = 200
 NUM_CHANNELS=128
 KERNEL_SIZE=(4,4)
@@ -315,12 +310,30 @@ class Model_Arena:
     def play(self, number_of_games=100):
         return self.arena.playGames(number_of_games, verbose=True)    
 
-os.environ["CUDA_VISIBLE_DEVICES"] = '0'
+if 1:
+    # === Ugly hack for reaching parent directory packages ===
+    from inspect import getsourcefile
+    import os.path
+    import sys
+    
+    current_path = os.path.abspath(getsourcefile(lambda:0))
+    current_dir = os.path.dirname(current_path)
+    parent_dir = current_dir[:current_dir.rfind(os.path.sep)]
 
-#set gpu memory grow
-config = tf.compat.v1.ConfigProto()  
-config.gpu_options.allow_growth=True  
-sess = tf.compat.v1.Session(config=config)
+    sys.path.insert(0, parent_dir)
+    # ========================================================
 
-arena = Model_Arena(model)
-print(arena.play())
+    import Arena
+    from gobang.GobangGame import GobangGame, display
+    from gobang.GobangPlayers import *
+    from gobang.tensorflow.NNet import NNetWrapper as NNet
+
+    os.environ["CUDA_VISIBLE_DEVICES"] = '0'
+
+    #set gpu memory grow
+    config = tf.compat.v1.ConfigProto()  
+    config.gpu_options.allow_growth=True  
+    sess = tf.compat.v1.Session(config=config)
+
+    arena = Model_Arena(model)
+    print(arena.play())
