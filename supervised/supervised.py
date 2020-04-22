@@ -9,6 +9,11 @@ from pickle import Pickler, Unpickler
 
 print(tf.__version__)
 
+import Arena
+from gobang.GobangGame import GobangGame, display
+from gobang.GobangPlayers import *
+from gobang.tensorflow.NNet import NNetWrapper as NNet
+
 EPOCHS = 200
 NUM_CHANNELS=128
 KERNEL_SIZE=(4,4)
@@ -23,6 +28,7 @@ AVERAGE_DUPLICATES=True
 DATAFILE="/home/doma945/amoba_teleport/temp_1000sim_big"
 #DATAFILE="/home/doma945/amoba_teleport/temp_4000sim"
 CACHEFILE = "/home/zombori/tmp/amoba_cache.npz"
+#CACHEFILE = "/home/doma945/tmp/amoba_cache.npz"
 NETWORK="linear"
 
 def load_history():
@@ -272,3 +278,49 @@ print(myweights.shape)
 for i in range(11):
     print("Filter ", i)
     print(myweights[:,:,i])
+
+
+
+class Model_Arena:
+    def get_input_for_model(self, board, player):
+        mtx = self.heuristic.get_field_stregth_mtx(board, 1)
+        heuristic_components = self.heuristic.get_x_line_mtx(board, 1)
+        shape = list(np.shape(board))+[1]
+        white_board = board * (board+1) -1
+        black_board = board * (board-1) -1
+        player_channel = player*np.ones(shape)
+        new_board = np.concatenate([np.reshape(white_board,shape),np.reshape(black_board,shape),
+                                    np.reshape(mtx, shape),
+                                    heuristic_components,
+                                    player_channel], axis=2)
+        return new_board
+
+    def model_player(self,b,p, model):
+        board = np.array([self.get_input_for_model(b, p)])
+        valids = self.game.getValidMoves(b, 1)
+        
+        probs = model.predict(board)[0][0]
+        move = np.argmax(probs*valids+valids*0.00001)
+        #print(probs, move)
+        return move
+        
+    def __init__(self, model):
+        self.game = GobangGame(col=12, row=4, nir=7, defender=-1)
+        self.heuristic = Heuristic(self.game)
+        #heuristic_player = Heuristic(self.game).random_play
+        heuristic_player = Heuristic(self.game).play
+        model_player = lambda b, p: Model_Arena.model_player(self,b,p,model)
+        self.arena = Arena.Arena(model_player, heuristic_player, self.game, display=display)
+
+    def play(self, number_of_games=100):
+        return self.arena.playGames(number_of_games, verbose=True)    
+
+os.environ["CUDA_VISIBLE_DEVICES"] = '0'
+
+#set gpu memory grow
+config = tf.compat.v1.ConfigProto()  
+config.gpu_options.allow_growth=True  
+sess = tf.compat.v1.Session(config=config)
+
+arena = Model_Arena(model)
+print(arena.play())
