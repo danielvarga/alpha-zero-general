@@ -25,6 +25,7 @@ class MCTS():
         self.lambdaHeur = lambdaHeur
         self.alphas = [args.alpha]*game.getActionSize()
         self.action_size = game.getActionSize()
+        self.depth_count = np.zeros(self.action_size+1).astype(int)
         
     def getActionProb(self, board, curPlayer, temp=1, debug=False):
         """
@@ -86,6 +87,8 @@ class MCTS():
             return -self.Es[s]
 
         if s not in self.Ps:
+            self.depth_count[int(np.sum(np.abs(raw_board)))]+=1
+            
             # leaf node
             # === get v by simulation ===:
             #v = self.fast_search(raw_board, curPlayer, action)

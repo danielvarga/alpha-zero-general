@@ -110,8 +110,17 @@ if __name__ == "__main__":
                      'numSelfPlayProcess': 10,'numPerProcessSelfPlay': 300,})
 
     mcts = MCTS(game, nnet, args1)
-    board = game.getInitBoard()
-    pi = mcts.getActionProb(board, 1, temp=1, debug=False)
+    for i in range(10):
+        board = game.getInitBoard()
+        player=1
+        action = -1
+        while(game.getGameEnded(board, player, action)==0):
+            pi = mcts.getActionProb(board, 1, temp=1, debug=False)
+            action = np.argmax(pi)
+            board, player = game.getNextState(board, player, action)
+        print(mcts.depth_count[:20])
+    
+    exit(0)
     comp = game.compress_board(board)
     print(comp[0], comp[1], comp)
     comp, player = game.getNextState_comp(comp, 1, 1)

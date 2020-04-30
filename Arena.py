@@ -58,7 +58,8 @@ class Arena():
                 #print("Turn ", str(it), "Player ", str(curPlayer))
                 self.display(board)
 
-            if(self.mcts!=None and self.mcts_player == curPlayer):
+            #if(self.mcts!=None and self.mcts_player == curPlayer):
+            if(self.mcts!=None):
                 action, data = self.mcts_play_and_collect_data(board, curPlayer)
                 trainExamples.append(data)
             else:

@@ -11,12 +11,12 @@ Before using multiprocessing, please check 2 things before use this script.
 args = dotdict({
     'displaybar': True,
     'multiCPU': True,
-    'numIters': 3,
+    'numIters': 1,
     'numEps': 100,
     'tempThreshold': 24,
     'updateThreshold': 0.51,
     'maxlenOfQueue': 320000,
-    'numMCTSSims': 300,
+    'numMCTSSims': 30,
     'cpuct': 1.0,
     'multiGPU': True,
     'setGPU': '0,1',
@@ -38,7 +38,7 @@ args = dotdict({
     'alpha':0.4,
     'epsilon':0.1,
     'heur_val_eps':1.0,
-    'fast_eval':False,
+    'fast_eval':True,
 })
 
 if __name__=="__main__":

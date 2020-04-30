@@ -56,9 +56,9 @@ def Async_Arena(iter_num, game, args):
     # create separate seeds for each worker
     np.random.seed(iter_num)
   
-    nnet = NNet(g)
-    nnet.load_checkpoint('./temp/','best.pth.tar')
-  
+    #nnet = NNet(g)
+    #nnet.load_checkpoint('./temp/','best.pth.tar')
+    nnet = None
     heuristic = Heuristic(game).random_play
     
     mcts1 = MCTS(game, nnet, args)
@@ -222,9 +222,9 @@ if __name__=="__main__":
 
     g = GobangGame(col=12, row=4, nir=7, defender=-1)
     os.environ["CUDA_VISIBLE_DEVICES"] = modeargs.gpu
-    args1 = dotdict({'numMCTSSims': 150, 'cpuct':1.0, 'evaluationDepth':1, 'multiGPU': True,
+    args1 = dotdict({'numMCTSSims': 1000, 'cpuct':1.0, 'evaluationDepth':1, 'multiGPU': True,
                      'setGPU':'0,1','alpha':0.3,'epsilon':0.25,'fast_eval':True,
-                     'numSelfPlayProcess': 10,'numPerProcessSelfPlay': 300,})
+                     'numSelfPlayProcess': 10,'numPerProcessSelfPlay': 150,})
     # all players
     rp = RandomPlayer(g).play
     hp = HumanGobangPlayer(g).play
